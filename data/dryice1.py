@@ -7,7 +7,6 @@
 import numpy as np
 
 from PIL import Image
-
 import torch.utils.data
 
 def load_krt(path):

@@ -87,11 +87,15 @@ if __name__ == "__main__":
     # build dataset & testing dataset
     starttime = time.time()
     testdataset = progressprof.get_dataset()
+    if len(testdataset) <= 0:
+        raise Exception("problem appeared get_dataset")
     dataloader = torch.utils.data.DataLoader(testdataset, batch_size=progressprof.batchsize, shuffle=False, drop_last=True, num_workers=0)
+    if len(dataloader) <= 0:
+        raise Exception("problem appeared dataloader")
     for testbatch in dataloader:
         break
     dataset = profile.get_dataset()
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=profile.batchsize, shuffle=True, drop_last=True, num_workers=16)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=profile.batchsize, shuffle=True, drop_last=True, num_workers=profile.batchsize)
     print("Dataset instantiated ({:.2f} s)".format(time.time() - starttime))
 
     # data writer

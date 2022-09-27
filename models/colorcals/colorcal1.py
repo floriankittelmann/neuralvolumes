@@ -22,4 +22,7 @@ class Colorcal(nn.Module):
             self.conv[k].bias.data.zero_()
 
     def forward(self, image, camindex):
-        return torch.cat([self.conv[self.allcameras[camindex[i].item()]](image[i:i+1, :, :, :]) for i in range(image.size(0))])
+        if image.dtype == torch.float64:
+            cuda0 = torch.device('cuda:0')
+            image = image.type(torch.FloatTensor).to(cuda0)
+        return torch.cat([self.conv[self.allcameras[camindex[i].item()]](image[i:i + 1, :, :, :]) for i in range(image.size(0))])
