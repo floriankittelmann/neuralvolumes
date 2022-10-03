@@ -9,6 +9,7 @@ from PIL import Image
 import torch.utils.data
 from data.blender2_utils import Camera_in_setup
 
+
 class Dataset(torch.utils.data.Dataset):
     def __init__(
             self,
@@ -19,6 +20,7 @@ class Dataset(torch.utils.data.Dataset):
             subsamplesize=0,
             imagemean=100.,
             imagestd=25.,
+            focal: float = (40.0 / 3.5)
     ):
         # get options
         self.allcameras = []
@@ -31,16 +33,16 @@ class Dataset(torch.utils.data.Dataset):
             camera_str = "{:03d}".format(camera_nr)
             camera = Camera_in_setup(radius, camera_nr)
             self.allcameras.append(camera_str)
-            self.campos[camera_str] = camera.get_cam_pos()
-            self.camrot[camera_str] = camera.get_cam_rot_matrix()
-            self.focal[camera_str] = np.array([1000.0, 1000.0])
-            self.princpt[camera_str] = np.array([1000.0, 1000.0])
+            self.campos[camera_str] = camera.get_cam_pos_training() / 3.5
+            self.camrot[camera_str] = camera.get_cam_rot_matrix_training()
+            self.focal[camera_str] = np.array([focal, focal])
+            self.princpt[camera_str] = np.array([focal, focal])
 
         self.cameras = list(filter(camerafilter, self.allcameras))
         self.framelist = framelist
         self.framecamlist = [(x, cam)
-                for x in self.framelist
-                for cam in self.cameras]
+                             for x in self.framelist
+                             for cam in self.cameras]
 
         self.fixedcameras = ['028', '001', '019']
         self.keyfilter = keyfilter
@@ -62,12 +64,12 @@ class Dataset(torch.utils.data.Dataset):
 
     def get_krt(self):
         return {k: {
-                "pos": self.campos[k],
-                "rot": self.camrot[k],
-                "focal": self.focal[k],
-                "princpt": self.princpt[k],
-                "size": np.array([667, 1024])}
-                for k in self.cameras}
+            "pos": self.campos[k],
+            "rot": self.camrot[k],
+            "focal": self.focal[k],
+            "princpt": self.princpt[k],
+            "size": np.array([667, 1024])}
+            for k in self.cameras}
 
     def get_allcameras(self):
         return self.allcameras
@@ -97,11 +99,12 @@ class Dataset(torch.utils.data.Dataset):
                 imagepath = (
                     "experiments/blender2/data/{}/cam{}_frame{:04}.jpg"
                         .format(self.fixedcameras[i], self.fixedcameras[i], int(frame)))
-                image = np.asarray(Image.open(imagepath), dtype=np.uint8)[::2, ::2, :].transpose((2, 0, 1)).astype(np.float32)
+                image = np.asarray(Image.open(imagepath), dtype=np.uint8)[::2, ::2, :].transpose((2, 0, 1)).astype(
+                    np.float32)
 
                 if np.sum(image) == 0:
                     validinput = False
-                fixedcamimage[i*3:(i+1)*3, :, :] = image
+                fixedcamimage[i * 3:(i + 1) * 3, :, :] = image
 
             fixedcamimage[:] -= self.imagemean
             fixedcamimage[:] /= self.imagestd
@@ -122,7 +125,7 @@ class Dataset(torch.utils.data.Dataset):
             if "image" in self.keyfilter:
                 # image
                 imagepath = (
-                        "experiments/blender2/data/{}/cam{}_frame{:04}.jpg"
+                    "experiments/blender2/data/{}/cam{}_frame{:04}.jpg"
                         .format(cam, cam, int(frame)))
                 image = np.asarray(Image.open(imagepath), dtype=np.uint8).transpose((2, 0, 1)).astype(np.float32)
                 height, width = image.shape[1:3]
@@ -136,17 +139,20 @@ class Dataset(torch.utils.data.Dataset):
                         indy = np.random.randint(0, height - self.subsamplesize + 1)
 
                         px, py = np.meshgrid(
-                                np.arange(indx, indx + self.subsamplesize).astype(np.float32),
-                                np.arange(indy, indy + self.subsamplesize).astype(np.float32))
+                            np.arange(indx, indx + self.subsamplesize).astype(np.float32),
+                            np.arange(indy, indy + self.subsamplesize).astype(np.float32))
                     elif self.subsampletype == "random":
-                        px = np.random.randint(0, width, size=(self.subsamplesize, self.subsamplesize)).astype(np.float32)
-                        py = np.random.randint(0, height, size=(self.subsamplesize, self.subsamplesize)).astype(np.float32)
+                        px = np.random.randint(0, width, size=(self.subsamplesize, self.subsamplesize)).astype(
+                            np.float32)
+                        py = np.random.randint(0, height, size=(self.subsamplesize, self.subsamplesize)).astype(
+                            np.float32)
                     elif self.subsampletype == "random2":
-                        px = np.random.uniform(0, width - 1e-5, size=(self.subsamplesize, self.subsamplesize)).astype(np.float32)
-                        py = np.random.uniform(0, height - 1e-5, size=(self.subsamplesize, self.subsamplesize)).astype(np.float32)
+                        px = np.random.uniform(0, width - 1e-5, size=(self.subsamplesize, self.subsamplesize)).astype(
+                            np.float32)
+                        py = np.random.uniform(0, height - 1e-5, size=(self.subsamplesize, self.subsamplesize)).astype(
+                            np.float32)
                     else:
                         px, py = np.meshgrid(np.arange(width).astype(np.float32), np.arange(height).astype(np.float32))
                     result["pixelcoords"] = np.stack((px, py), axis=-1)
 
         return result
-

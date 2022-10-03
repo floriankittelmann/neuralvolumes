@@ -151,7 +151,7 @@ class Autoencoder(nn.Module):
             irgbsqerr = weight * (image - rayrgb) ** 2
 
             if "irgbsqerr" in outputlist:
-                result["irgbsqerr"] = rgbsqerr
+                result["irgbsqerr"] = irgbsqerr
 
             if "irgbmse" in losslist:
                 irgbmse = torch.sum(irgbsqerr.view(irgbsqerr.size(0), -1), dim=-1)

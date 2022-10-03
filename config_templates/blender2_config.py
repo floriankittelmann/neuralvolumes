@@ -12,10 +12,12 @@ def get_dataset(camerafilter=lambda x: True, maxframes=-1, subsampletype=None):
         camerafilter=camerafilter,
         framelist=[i for i in range(1, 502, 3)][:maxframes],
         keyfilter=["bg", "fixedcamimage", "camera", "image", "pixelcoords"],
-        imagemean=100.,
-        imagestd=25.,
+        imagemean=255.,
+        imagestd=10.,
         subsampletype=subsampletype,
-        subsamplesize=128)
+        subsamplesize=128,
+        focal=0.011428
+    )
 
 def get_autoencoder(dataset):
     import models.neurvol1 as aemodel
@@ -26,7 +28,7 @@ def get_autoencoder(dataset):
     return aemodel.Autoencoder(
         dataset,
         encoderlib.Encoder(3),
-        decoderlib.Decoder(globalwarp=False),
+        decoderlib.Decoder(globalwarp=False, warptype=None),
         volsamplerlib.VolSampler(),
         colorcalib.Colorcal(dataset.get_allcameras()),
         4. / 256)
