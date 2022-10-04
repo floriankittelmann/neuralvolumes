@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     # load datasets
     dataset = profile.get_dataset()
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batchsize, shuffle=False, num_workers=16)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batchsize, shuffle=False, num_workers=0)
 
     # data writer
     writer = profile.get_writer()

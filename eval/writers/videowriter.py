@@ -16,14 +16,14 @@ import matplotlib.cm as cm
 from PIL import Image
 
 def writeimage(x):
-    randid, itemnum, imgout = x
+    randid, itemnum, imgout, outpath = x
 
     imgout = np.clip(np.clip(imgout / 255., 0., 255.) ** (1. / 1.8) * 255., 0., 255).astype(np.uint8)
 
     if imgout.shape[1] % 2 != 0:
         imgout = imgout[:, :-1]
 
-    Image.fromarray(imgout).save("experiments/blender2/render_test/{}/{:06}.jpg".format(randid, itemnum))
+    Image.fromarray(imgout).save(os.path.join(outpath, "{}".format(randid), "{:06}.jpg".format(itemnum)))
 
 class Writer():
     def __init__(self, outpath, showtarget=False, showdiff=False, bgcolor=[0., 0., 0.], colcorrect=[1.35, 1.16, 1.5], nthreads=16):
@@ -37,7 +37,7 @@ class Writer():
         self.randid = ''.join([str(x) for x in np.random.randint(0, 9, size=10)])
 
         try:
-            os.makedirs("experiments/blender2/render_test/{}".format(self.randid))
+            os.makedirs(os.path.join(outpath, "{}".format(self.randid)))
         except OSError:
             pass
 
@@ -72,17 +72,18 @@ class Writer():
         self.writepool.map(writeimage,
                 zip([self.randid for i in range(itemnum.size(0))],
                     itemnum.data.to("cpu").numpy(),
-                    imgout))
+                    imgout,
+                    self.outpath))
         self.nitems += itemnum.size(0)
 
     def finalize(self):
         # make video file
         command = (
-                "ffmpeg -y -r 30 -i experiments/blender2/render_test/{}/%06d.jpg "
+                "ffmpeg -y -r 30 -i {}/%06d.jpg "
                 "-vframes {} "
                 "-vcodec libx264 -crf 18 "
                 "-pix_fmt yuv420p "
-                "{}".format(self.randid, self.nitems, self.outpath)
+                "{}".format(os.path.join(self.outpath, "{}".format(self.randid)), self.nitems, self.outpath)
                 ).split()
         subprocess.call(command)
-        #shutil.rmtree("experiments/blender2/render_test/{}".format(self.randid))
+        shutil.rmtree("experiments/blender2/render_test/{}".format(self.randid))
