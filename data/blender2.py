@@ -8,6 +8,7 @@ import numpy as np
 from PIL import Image
 import torch.utils.data
 from data.blender2_utils import Camera_in_setup
+from scipy.spatial.transform import Rotation as R
 
 
 class Dataset(torch.utils.data.Dataset):
@@ -20,7 +21,7 @@ class Dataset(torch.utils.data.Dataset):
             subsamplesize=0,
             imagemean=100.,
             imagestd=25.,
-            focal: float = (40.0 / 3.5)
+            focal: float = 1000.0
     ):
         # get options
         self.allcameras = []
@@ -37,6 +38,7 @@ class Dataset(torch.utils.data.Dataset):
             self.camrot[camera_str] = camera.get_cam_rot_matrix_training()
             self.focal[camera_str] = np.array([focal, focal])
             self.princpt[camera_str] = np.array([focal, focal])
+
 
         self.cameras = list(filter(camerafilter, self.allcameras))
         self.framelist = framelist

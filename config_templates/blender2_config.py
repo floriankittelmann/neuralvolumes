@@ -15,8 +15,7 @@ def get_dataset(camerafilter=lambda x: True, maxframes=-1, subsampletype=None):
         imagemean=255.,
         imagestd=10.,
         subsampletype=subsampletype,
-        subsamplesize=128,
-        focal=0.011428
+        subsamplesize=128
     )
 
 def get_autoencoder(dataset):
