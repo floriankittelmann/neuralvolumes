@@ -23,7 +23,7 @@ def writeimage(x):
     if imgout.shape[1] % 2 != 0:
         imgout = imgout[:, :-1]
 
-    Image.fromarray(imgout).save("/tmp/{}/{:06}.jpg".format(randid, itemnum))
+    Image.fromarray(imgout).save("experiments/blender2/render_test/{}/{:06}.jpg".format(randid, itemnum))
 
 class Writer():
     def __init__(self, outpath, showtarget=False, showdiff=False, bgcolor=[0., 0., 0.], colcorrect=[1.35, 1.16, 1.5], nthreads=16):
@@ -35,8 +35,9 @@ class Writer():
 
         # set up temporary output
         self.randid = ''.join([str(x) for x in np.random.randint(0, 9, size=10)])
+
         try:
-            os.makedirs("/tmp/{}".format(self.randid))
+            os.makedirs("experiments/blender2/render_test/{}".format(self.randid))
         except OSError:
             pass
 
@@ -77,12 +78,11 @@ class Writer():
     def finalize(self):
         # make video file
         command = (
-                "ffmpeg -y -r 30 -i /tmp/{}/%06d.jpg "
+                "ffmpeg -y -r 30 -i experiments/blender2/render_test/{}/%06d.jpg "
                 "-vframes {} "
                 "-vcodec libx264 -crf 18 "
                 "-pix_fmt yuv420p "
                 "{}".format(self.randid, self.nitems, self.outpath)
                 ).split()
         subprocess.call(command)
-
-        shutil.rmtree("/tmp/{}".format(self.randid))
+        #shutil.rmtree("experiments/blender2/render_test/{}".format(self.randid))

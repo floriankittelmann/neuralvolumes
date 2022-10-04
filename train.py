@@ -13,6 +13,7 @@ import os
 import sys
 import time
 sys.dont_write_bytecode = True
+import gc
 
 import numpy as np
 
@@ -64,6 +65,8 @@ if __name__ == "__main__":
     parser.add_argument('--profile', type=str, default="Train", help='config profile')
     parser.add_argument('--devices', type=int, nargs='+', default=[0], help='devices')
     parser.add_argument('--resume', action='store_true', help='resume training')
+    parser.add_argument('--nofworkers', type=int, default=16)
+    parser.add_argument('--local', action='store_true', help='training on local machine with small memory size and small gpu power')
     parsed, unknown = parser.parse_known_args()
     for arg in unknown:
         if arg.startswith(("-", "--")):
@@ -87,15 +90,23 @@ if __name__ == "__main__":
     # build dataset & testing dataset
     starttime = time.time()
     testdataset = progressprof.get_dataset()
+    batch_size_test = progressprof.batchsize
+    if args.local:
+        batch_size_test = 3
     if len(testdataset) <= 0:
         raise Exception("problem appeared get_dataset")
-    dataloader = torch.utils.data.DataLoader(testdataset, batch_size=progressprof.batchsize, shuffle=False, drop_last=True, num_workers=0)
+    dataloader = torch.utils.data.DataLoader(testdataset, batch_size=batch_size_test, shuffle=False, drop_last=True, num_workers=0)
     if len(dataloader) <= 0:
         raise Exception("problem appeared dataloader")
     for testbatch in dataloader:
         break
     dataset = profile.get_dataset()
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=profile.batchsize, shuffle=True, drop_last=True, num_workers=profile.batchsize)
+    nof_workers = args.nofworkers
+    batch_size_training = profile.batchsize
+    if args.local:
+        nof_workers = 1
+        batch_size_training = 3
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size_training, shuffle=True, drop_last=True, num_workers=nof_workers)
     print("Dataset instantiated ({:.2f} s)".format(time.time() - starttime))
 
     # data writer
@@ -174,8 +185,19 @@ if __name__ == "__main__":
 
             iternum += 1
 
+            torch.cuda.empty_cache()
+            del loss
+            del output
+            gc.collect()
+
+
+
+
         if iternum >= profile.maxiter:
             break
+
+
+
 
     # cleanup
     writer.finalize()

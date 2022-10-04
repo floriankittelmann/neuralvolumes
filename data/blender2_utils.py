@@ -75,7 +75,6 @@ if __name__ == "__main__":
         print(" ")
         print("{:3}".format(i))
         camera = Camera_in_setup(radius, i)
-        list_cams.append(camera)
         print("--- blender ----")
         print("X: {0:.2f}".format(camera.get_x()))
         print("Y: {0:.2f}".format(camera.get_y()))

@@ -67,6 +67,8 @@ class ProgressWriter():
             if len(row) == 4:
                 rows.append(np.concatenate(row, axis=1))
                 row = []
+        if len(rows) == 0:
+            rows.append(np.concatenate(row, axis=1))
         imgout = np.concatenate(rows, axis=0)
         outpath = os.path.dirname(__file__)
         Image.fromarray(np.clip(imgout, 0, 255).astype(np.uint8)).save(os.path.join(outpath, "prog_{:06}.jpg".format(iternum)))
@@ -82,7 +84,7 @@ class Render():
     """Render model with training camera or from novel viewpoints.
     
     e.g., python render.py {configpath} Render --maxframes 128"""
-    def __init__(self, cam=None, maxframes=-1, showtarget=False, viewtemplate=False):
+    def __init__(self, cam="028", maxframes=-1, showtarget=False, viewtemplate=False):
         self.cam = cam
         self.maxframes = maxframes
         self.showtarget = showtarget

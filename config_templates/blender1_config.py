@@ -65,6 +65,8 @@ class ProgressWriter():
             if len(row) == 4:
                 rows.append(np.concatenate(row, axis=1))
                 row = []
+        if len(rows) == 0:
+            rows.append(np.concatenate(row, axis=1))
         imgout = np.concatenate(rows, axis=0)
         outpath = os.path.dirname(__file__)
         Image.fromarray(np.clip(imgout, 0, 255).astype(np.uint8)).save(os.path.join(outpath, "prog_{:06}.jpg".format(iternum)))
