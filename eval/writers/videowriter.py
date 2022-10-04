@@ -22,12 +22,10 @@ def writeimage(x):
 
     if imgout.shape[1] % 2 != 0:
         imgout = imgout[:, :-1]
-
-    Image.fromarray(imgout).save(os.path.join(outpath, "{}".format(randid), "{:06}.jpg".format(itemnum)))
+    Image.fromarray(imgout).save(os.path.join(outpath, "{:06}.jpg".format(itemnum)))
 
 class Writer():
-    def __init__(self, outpath, showtarget=False, showdiff=False, bgcolor=[0., 0., 0.], colcorrect=[1.35, 1.16, 1.5], nthreads=16):
-        self.outpath = outpath
+    def __init__(self, outpath, filename, showtarget=False, showdiff=False, bgcolor=[0., 0., 0.], colcorrect=[1.35, 1.16, 1.5], nthreads=16):
         self.showtarget = showtarget
         self.showdiff = showdiff
         self.bgcolor = np.array(bgcolor, dtype=np.float32)
@@ -35,9 +33,12 @@ class Writer():
 
         # set up temporary output
         self.randid = ''.join([str(x) for x in np.random.randint(0, 9, size=10)])
+        outpath_img_folder = os.path.join(outpath, "{}".format(self.randid))
+        self.outpath_img_folder = outpath_img_folder
+        self.outpath_video = os.path.join(outpath, filename)
 
         try:
-            os.makedirs(os.path.join(outpath, "{}".format(self.randid)))
+            os.makedirs(self.outpath_img_folder)
         except OSError:
             pass
 
@@ -69,11 +70,12 @@ class Writer():
             irgbsqerr = (cm.magma(4. * irgbsqerr / 255.)[:, :, :, :3] * 255.)
             imgout = np.concatenate((imgout, irgbsqerr), axis=2)
 
+        outpath_img_folder = self.outpath_img_folder
         self.writepool.map(writeimage,
                 zip([self.randid for i in range(itemnum.size(0))],
                     itemnum.data.to("cpu").numpy(),
                     imgout,
-                    self.outpath))
+                    [outpath_img_folder for i in range(itemnum.size(0))]))
         self.nitems += itemnum.size(0)
 
     def finalize(self):
@@ -83,7 +85,7 @@ class Writer():
                 "-vframes {} "
                 "-vcodec libx264 -crf 18 "
                 "-pix_fmt yuv420p "
-                "{}".format(os.path.join(self.outpath, "{}".format(self.randid)), self.nitems, self.outpath)
+                "{}".format(os.path.join(self.outpath_img_folder, "{}".format(self.randid)), self.nitems, self.outpath_video)
                 ).split()
         subprocess.call(command)
-        shutil.rmtree("experiments/blender2/render_test/{}".format(self.randid))
+        shutil.rmtree(self.outpath_img_folder)

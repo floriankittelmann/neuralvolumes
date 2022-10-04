@@ -102,8 +102,7 @@ class Render():
     def get_writer(self):
         import eval.writers.videowriter as writerlib
         return writerlib.Writer(
-            os.path.join(os.path.dirname(__file__),
-                "render_{}{}.mp4".format(
-                    "rotate" if self.cam is None else self.cam,
-                    "_template" if self.viewtemplate else "")),
-            showtarget=self.showtarget)
+            os.path.dirname(__file__),
+            "render_{}{}.mp4".format("rotate" if self.cam is None else self.cam, "_template" if self.viewtemplate else ""),
+            showtarget=self.showtarget
+        )
