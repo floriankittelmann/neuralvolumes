@@ -44,7 +44,7 @@ class Dataset(torch.utils.data.Dataset):
         self.framelist = framelist
         self.framecamlist = [(x, cam)
                              for x in self.framelist
-                             for cam in self.cameras]
+                             for cam in (self.cameras if len(self.cameras) > 0 else [None])]
 
         self.fixedcameras = ['028', '001', '019']
         self.keyfilter = keyfilter

@@ -22,6 +22,7 @@ def writeimage(x):
 
     if imgout.shape[1] % 2 != 0:
         imgout = imgout[:, :-1]
+
     Image.fromarray(imgout).save(os.path.join(outpath, "{:06}.jpg".format(itemnum)))
 
 class Writer():
@@ -85,7 +86,7 @@ class Writer():
                 "-vframes {} "
                 "-vcodec libx264 -crf 18 "
                 "-pix_fmt yuv420p "
-                "{}".format(os.path.join(self.outpath_img_folder, "{}".format(self.randid)), self.nitems, self.outpath_video)
+                "{}".format(self.outpath_img_folder, self.nitems, self.outpath_video)
                 ).split()
         subprocess.call(command)
-        shutil.rmtree(self.outpath_img_folder)
+        #shutil.rmtree(self.outpath_img_folder)

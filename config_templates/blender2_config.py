@@ -83,7 +83,7 @@ class Render():
     """Render model with training camera or from novel viewpoints.
     
     e.g., python render.py {configpath} Render --maxframes 128"""
-    def __init__(self, cam="028", maxframes=-1, showtarget=False, viewtemplate=False):
+    def __init__(self, cam=None, maxframes=-1, showtarget=False, viewtemplate=False):
         self.cam = cam
         self.maxframes = maxframes
         self.showtarget = showtarget
