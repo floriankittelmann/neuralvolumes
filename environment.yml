@@ -185,6 +185,7 @@ dependencies:
   - torchaudio=0.12.1=py310_cu116
   - torchvision=0.13.1=py310_cu116
   - tornado=6.2=py310he2412df_0
+  - tqdm=4.64.1=pyhd8ed1ab_0
   - typing_extensions=4.3.0=pyha770c72_0
   - tzdata=2022c=h191b570_0
   - ucrt=10.0.20348.0=h57928b3_0
