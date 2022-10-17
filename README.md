@@ -23,18 +23,21 @@
 ## Deployment scripts
 
 ## Server init script
-1. cd <specified path in env.json>
+1. cd <path>
 2. create experiments folder
 3. create shared folder
 4. create first version git pull
 5. ln -s experiments folder
-6. message that data is expected in experiments file
-7. message that env.json needs to be placed in shared file
+6. conda env create
+7. message that data is expected in experiments file
+8. message that env.json needs to be placed in shared file
 
 ## Deploy script
-1. cd <path>/neuralvolumes
-2. git pull
-3. does simlinks still exists?
+1. ssh
+2. cd <path>/neuralvolumes
+3. git pull
+4. conda update -f environment.yml
+5. simlinks will still exist - so nothing doing there
 
 # Neural Volumes - Readme from forked Repository
 

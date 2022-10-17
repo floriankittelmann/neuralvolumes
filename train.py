@@ -16,6 +16,8 @@ import numpy as np
 import os
 import torch.utils.data
 import json
+import uuid
+import shutil
 
 sys.dont_write_bytecode = True
 torch.backends.cudnn.benchmark = True  # gotta go fast!
@@ -69,22 +71,49 @@ def get_env() -> dict:
             env_dict = json.load(json_content)
     return env_dict
 
+def is_local_env() -> bool:
+    return get_env()["env"] == "local"
 
 if __name__ == "__main__":
     # parse arguments
     parser = argparse.ArgumentParser(description='Train an autoencoder')
-    parser.add_argument('experconfig', type=str, help='experiment config file')
+    parser.add_argument('datasetname', type=str, help='dataset name. a template config file is needed under config_templates and the data should be uploaded')
+    parser.add_argument('experimentname', type=str, help='define an experiment name')
     parser.add_argument('--profile', type=str, default="Train", help='config profile')
     parser.add_argument('--devices', type=int, nargs='+', default=[0], help='devices')
     parser.add_argument('--resume', action='store_true', help='resume training')
     parser.add_argument('--nofworkers', type=int, default=16)
+    parser.add_argument('--local', action='store_true',
+                        help='training on local machine with small memory size and small gpu power')
     parsed, unknown = parser.parse_known_args()
     for arg in unknown:
         if arg.startswith(("-", "--")):
             parser.add_argument(arg, type=eval)
     args = parser.parse_args()
 
-    outpath = os.path.dirname(args.experconfig)
+    dataset_name = args.datasetname
+    templatefilename = dataset_name + "_config.py"
+    path_template = os.path.join("config_templates", templatefilename)
+    if not os.path.exists(path_template):
+        raise Exception(path_template + " -> file does not exist ")
+    print("found config template")
+
+    root_experiment_path = os.path.join("experiments", dataset_name)
+    if not os.path.exists(root_experiment_path) or not os.path.isdir(root_experiment_path):
+        raise Exception(root_experiment_path + " -> directory does not exist")
+    print("found experiments path")
+
+    experiment_name = args.experimentname
+    unique_experiment_name = "" + experiment_name + "_" + str(uuid.uuid4())
+    experiment_path = os.path.join(root_experiment_path, unique_experiment_name)
+    os.mkdir(experiment_path)
+    print("created new experiment")
+
+    config_path = os.path.join(experiment_path, "config.py")
+    shutil.copyfile(path_template, config_path)
+    print("copied config file")
+
+    outpath = os.path.dirname(config_path)
     log = Logger("{}/log.txt".format(outpath), args.resume)
     print("Python", sys.version)
     print("PyTorch", torch.__version__)
@@ -93,7 +122,7 @@ if __name__ == "__main__":
 
     # load config
     starttime = time.time()
-    experconfig = import_module(args.experconfig, "config")
+    experconfig = import_module(config_path, "config")
     profile = getattr(experconfig, args.profile)(**{k: v for k, v in vars(args).items() if k not in parsed})
     progressprof = experconfig.Progress()
     print("Config loaded ({:.2f} s)".format(time.time() - starttime))
@@ -102,7 +131,7 @@ if __name__ == "__main__":
     starttime = time.time()
     testdataset = progressprof.get_dataset()
     batch_size_test = progressprof.batchsize
-    if args.local:
+    if is_local_env():
         batch_size_test = 3
     if len(testdataset) <= 0:
         raise Exception("problem appeared get_dataset")
@@ -113,11 +142,10 @@ if __name__ == "__main__":
     for testbatch in dataloader:
         break
 
-    env = get_env()
     dataset = profile.get_dataset()
     nof_workers = args.nofworkers
     batch_size_training = profile.batchsize
-    if env["env"] == "local":
+    if is_local_env():
         nof_workers = 1
         batch_size_training = 3
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size_training, shuffle=True, drop_last=True,
@@ -149,13 +177,14 @@ if __name__ == "__main__":
     iternum = log.iternum
     prevloss = np.inf
 
+    env = get_env()
     epochs_to_learn = 10000
-    wandb.init(project=env["wandb"]["project"], entity=env["wandb"]["entity"])
-    wandb.config = {
+    wandb.init(project=env["wandb"]["project"], entity=env["wandb"]["entity"], config={
+        "experiment_path": experiment_path,
         "learning_rate": profile.lr,
         "epochs": epochs_to_learn,
         "batch_size": profile.batchsize
-    }
+    })
     for epoch in range(epochs_to_learn):
         for data in dataloader:
             # forward
