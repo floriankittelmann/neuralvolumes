@@ -6,23 +6,24 @@
 #
 """Train an autoencoder."""
 import argparse
-import gc
 import importlib
 import importlib.util
-import os
 import sys
 import time
-sys.dont_write_bytecode = True
 import gc
-
+import wandb
 import numpy as np
-
-import torch
+import os
 import torch.utils.data
-torch.backends.cudnn.benchmark = True # gotta go fast!
+import json
+
+sys.dont_write_bytecode = True
+torch.backends.cudnn.benchmark = True  # gotta go fast!
+
 
 class Logger(object):
     """Duplicates all stdout to a file."""
+
     def __init__(self, path, resume):
         if not resume and os.path.exists(path):
             print(path + " exists")
@@ -52,11 +53,22 @@ class Logger(object):
     def flush(self):
         pass
 
+
 def import_module(file_path, module_name):
     spec = importlib.util.spec_from_file_location(module_name, file_path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def get_env() -> dict:
+    file_name = 'env.json'
+    env_dict = {}
+    if os.path.exists(file_name):
+        with open(file_name) as json_content:
+            env_dict = json.load(json_content)
+    return env_dict
+
 
 if __name__ == "__main__":
     # parse arguments
@@ -66,7 +78,8 @@ if __name__ == "__main__":
     parser.add_argument('--devices', type=int, nargs='+', default=[0], help='devices')
     parser.add_argument('--resume', action='store_true', help='resume training')
     parser.add_argument('--nofworkers', type=int, default=16)
-    parser.add_argument('--local', action='store_true', help='training on local machine with small memory size and small gpu power')
+    parser.add_argument('--local', action='store_true',
+                        help='training on local machine with small memory size and small gpu power')
     parsed, unknown = parser.parse_known_args()
     for arg in unknown:
         if arg.startswith(("-", "--")):
@@ -95,7 +108,8 @@ if __name__ == "__main__":
         batch_size_test = 3
     if len(testdataset) <= 0:
         raise Exception("problem appeared get_dataset")
-    dataloader = torch.utils.data.DataLoader(testdataset, batch_size=batch_size_test, shuffle=False, drop_last=True, num_workers=0)
+    dataloader = torch.utils.data.DataLoader(testdataset, batch_size=batch_size_test, shuffle=False, drop_last=True,
+                                             num_workers=0)
     if len(dataloader) <= 0:
         raise Exception("problem appeared dataloader")
     for testbatch in dataloader:
@@ -106,7 +120,8 @@ if __name__ == "__main__":
     if args.local:
         nof_workers = 1
         batch_size_training = 3
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size_training, shuffle=True, drop_last=True, num_workers=nof_workers)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size_training, shuffle=True, drop_last=True,
+                                             num_workers=nof_workers)
     print("Dataset instantiated ({:.2f} s)".format(time.time() - starttime))
 
     # data writer
@@ -134,7 +149,15 @@ if __name__ == "__main__":
     iternum = log.iternum
     prevloss = np.inf
 
-    for epoch in range(10000):
+    epochs_to_learn = 10000
+    env = get_env()
+    wandb.init(project=env["wandb"]["project"], entity=env["wandb"]["entity"])
+    wandb.config = {
+        "learning_rate": profile.lr,
+        "epochs": epochs_to_learn,
+        "batch_size": profile.batchsize
+    }
+    for epoch in range(epochs_to_learn):
         for data in dataloader:
             # forward
             output = ae(iternum, lossweights.keys(), **{k: x.to("cuda") for k, x in data.items()})
@@ -144,11 +167,16 @@ if __name__ == "__main__":
                 lossweights[k] * (torch.sum(v[0]) / torch.sum(v[1]) if isinstance(v, tuple) else torch.mean(v))
                 for k, v in output["losses"].items()])
 
+            wandb.log({"loss": loss})
+            wandb.watch(ae)
+
             # print current information
             print("Iteration {}: loss = {:.5f}, ".format(iternum, float(loss.item())) +
-                    ", ".join(["{} = {:.5f}".format(k,
-                        float(torch.sum(v[0]) / torch.sum(v[1]) if isinstance(v, tuple) else torch.mean(v)))
-                        for k, v in output["losses"].items()]), end="")
+                  ", ".join(["{} = {:.5f}".format(k,
+                                                  float(torch.sum(v[0]) / torch.sum(v[1]) if isinstance(v,
+                                                                                                        tuple) else torch.mean(
+                                                      v)))
+                             for k, v in output["losses"].items()]), end="")
             if iternum % 10 == 0:
                 endtime = time.time()
                 ips = 10. / (endtime - starttime)
@@ -160,7 +188,8 @@ if __name__ == "__main__":
             # compute evaluation output
             if iternum in evalpoints:
                 with torch.no_grad():
-                    testoutput = ae(iternum, [], **{k: x.to("cuda") for k, x in testbatch.items()}, **progressprof.get_ae_args())
+                    testoutput = ae(iternum, [], **{k: x.to("cuda") for k, x in testbatch.items()},
+                                    **progressprof.get_ae_args())
 
                 b = data["campos"].size(0)
                 writer.batch(iternum, iternum * profile.batchsize + torch.arange(b), **testbatch, **testoutput)
@@ -190,14 +219,8 @@ if __name__ == "__main__":
             del output
             gc.collect()
 
-
-
-
         if iternum >= profile.maxiter:
             break
-
-
-
 
     # cleanup
     writer.finalize()

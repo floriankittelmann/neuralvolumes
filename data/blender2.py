@@ -8,7 +8,6 @@ import numpy as np
 from PIL import Image
 import torch.utils.data
 from data.blender2_utils import Camera_in_setup
-from scipy.spatial.transform import Rotation as R
 
 
 class Dataset(torch.utils.data.Dataset):

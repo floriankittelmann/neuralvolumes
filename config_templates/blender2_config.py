@@ -38,17 +38,17 @@ def get_autoencoder(dataset):
 class Train():
     batchsize=16
     maxiter=500000
+    lr = 0.0001
     def get_autoencoder(self, dataset): return get_autoencoder(dataset)
     def get_dataset(self): return get_dataset(subsampletype="random2")
     def get_optimizer(self, ae):
         import itertools
         import torch.optim
-        lr = 0.0001
         aeparams = itertools.chain(
             [{"params": x} for x in ae.encoder.parameters()],
             [{"params": x} for x in ae.decoder.parameters()],
             [{"params": x} for x in ae.colorcal.parameters()])
-        return torch.optim.Adam(aeparams, lr=lr, betas=(0.9, 0.999))
+        return torch.optim.Adam(aeparams, lr=self.lr, betas=(0.9, 0.999))
     def get_loss_weights(self):
         return {"irgbmse": 1.0, "kldiv": 0.001, "alphapr": 0.01, "tvl1": 0.01}
 
