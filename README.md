@@ -11,14 +11,24 @@
 
 ### Install a package
 1. ```conda activate neuralvolumes```
-2. ```conda install -c <conda-source> <package-name>``` -> On https://anaconda.org/ can be found the pacakges with the correct command
-3. Overwrite the environment.yml file in the repository: ```conda env export -f environment.yml```
+2. ```conda install -c <conda-source> <package-name>```
+3. ```conda env export -c pytorch -c nvidia/label/cuda-11.6.2 -f environment.yml --from-history```
 4. Check the changes via git of the environment.yml file and commit if OK
 
 ### Update conda env
 
 1. ```conda activate neuralvolumes```
 2. ```conda env update --file environment.yml```
+
+## Deployment scripts
+
+## Server init script
+1. cd <specified path in env.json>
+2. create experiments folder
+3. create releases folder
+4. create first version git pull, mv to 001
+5. create simlink ```ln -s releases/001 current```
+6. message that data is expected in experiments file
 
 # Neural Volumes - Readme from forked Repository
 
