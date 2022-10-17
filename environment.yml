@@ -1,5 +1,7 @@
 name: neuralvolumes
 channels:
+  - pytorch
+  - nvidia/label/cuda-11.6.2
   - conda-forge
   - defaults
 dependencies:
