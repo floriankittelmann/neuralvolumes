@@ -167,15 +167,18 @@ if __name__ == "__main__":
                 lossweights[k] * (torch.sum(v[0]) / torch.sum(v[1]) if isinstance(v, tuple) else torch.mean(v))
                 for k, v in output["losses"].items()])
 
-            wandb.log({"loss": loss})
+            dict_wandb = {"loss": float(loss.item())}
+            for k, v in output["losses"].items():
+                if isinstance(v, tuple):
+                    dict_wandb[k] = float(torch.sum(v[0]) / torch.sum(v[1]))
+                else:
+                    dict_wandb[k] = float(torch.mean(v))
+            wandb.log(dict_wandb)
             wandb.watch(ae)
 
             # print current information
             print("Iteration {}: loss = {:.5f}, ".format(iternum, float(loss.item())) +
-                  ", ".join(["{} = {:.5f}".format(k,
-                                                  float(torch.sum(v[0]) / torch.sum(v[1]) if isinstance(v,
-                                                                                                        tuple) else torch.mean(
-                                                      v)))
+                  ", ".join(["{} = {:.5f}".format(k, float(torch.sum(v[0]) / torch.sum(v[1]) if isinstance(v, tuple) else torch.mean(v)))
                              for k, v in output["losses"].items()]), end="")
             if iternum % 10 == 0:
                 endtime = time.time()

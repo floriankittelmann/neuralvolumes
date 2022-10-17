@@ -20,7 +20,9 @@ class Dataset(torch.utils.data.Dataset):
             subsamplesize=0,
             imagemean=100.,
             imagestd=25.,
-            focal: float = 1000.0
+            scale_factor=1.0,
+            focal_length=1000.0,
+            princpt=1000.0
     ):
         # get options
         self.allcameras = []
@@ -29,15 +31,21 @@ class Dataset(torch.utils.data.Dataset):
         self.focal = {}
         self.princpt = {}
         radius = 3.5
+
         for camera_nr in range(36):
             camera_str = "{:03d}".format(camera_nr)
             camera = Camera_in_setup(radius, camera_nr)
             self.allcameras.append(camera_str)
-            self.campos[camera_str] = camera.get_cam_pos_training() / 3.5
-            self.camrot[camera_str] = camera.get_cam_rot_matrix_training()
-            self.focal[camera_str] = np.array([focal, focal])
-            self.princpt[camera_str] = np.array([focal, focal])
 
+            # cameras need to be scaled because the volume is normalized to the space of [1,-1]^3
+            self.campos[camera_str] = camera.get_cam_pos_training() / scale_factor
+            self.camrot[camera_str] = camera.get_cam_rot_matrix_training()
+
+            # the focal length does not needed to normalize because it is given in px
+            self.focal[camera_str] = np.array([focal_length, focal_length])
+
+            # in my opinion should be [0, 0] because the
+            self.princpt[camera_str] = np.array([princpt, princpt])
 
         self.cameras = list(filter(camerafilter, self.allcameras))
         self.framelist = framelist

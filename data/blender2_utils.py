@@ -15,8 +15,6 @@ class Camera_in_setup:
         self.theta = self.theta_degrees / 360.0 * 2 * math.pi
         self.phi = self.phi_degrees / 360.0 * 2 * math.pi
         self.radius = radius
-        #self.phi_training = (180.0 - self.phi_degrees) / 360.0 * 2 * math.pi
-        #self.theta_training = (180.0 - self.theta_degrees) / 360.0 * 2 * math.pi
 
     def get_theta_degrees_from_cam_nr(self, camera_nr: int) -> float:
         interval_theta = math.floor(float(camera_nr) / 3.0)
