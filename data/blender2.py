@@ -7,7 +7,7 @@
 import numpy as np
 from PIL import Image
 import torch.utils.data
-from data.blender2_utils import Camera_in_setup
+from data.blender2_utils import CameraInSetup
 
 
 class Dataset(torch.utils.data.Dataset):
@@ -30,11 +30,10 @@ class Dataset(torch.utils.data.Dataset):
         self.camrot = {}
         self.focal = {}
         self.princpt = {}
-        radius = 3.5
 
         for camera_nr in range(36):
             camera_str = "{:03d}".format(camera_nr)
-            camera = Camera_in_setup(radius, camera_nr)
+            camera = CameraInSetup(camera_nr)
             self.allcameras.append(camera_str)
 
             # cameras need to be scaled because the volume is normalized to the space of [1,-1]^3

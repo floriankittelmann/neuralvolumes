@@ -78,8 +78,6 @@ if __name__ == "__main__":
     parser.add_argument('--devices', type=int, nargs='+', default=[0], help='devices')
     parser.add_argument('--resume', action='store_true', help='resume training')
     parser.add_argument('--nofworkers', type=int, default=16)
-    parser.add_argument('--local', action='store_true',
-                        help='training on local machine with small memory size and small gpu power')
     parsed, unknown = parser.parse_known_args()
     for arg in unknown:
         if arg.startswith(("-", "--")):
@@ -114,10 +112,12 @@ if __name__ == "__main__":
         raise Exception("problem appeared dataloader")
     for testbatch in dataloader:
         break
+
+    env = get_env()
     dataset = profile.get_dataset()
     nof_workers = args.nofworkers
     batch_size_training = profile.batchsize
-    if args.local:
+    if env["env"] == "local":
         nof_workers = 1
         batch_size_training = 3
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size_training, shuffle=True, drop_last=True,
@@ -150,7 +150,6 @@ if __name__ == "__main__":
     prevloss = np.inf
 
     epochs_to_learn = 10000
-    env = get_env()
     wandb.init(project=env["wandb"]["project"], entity=env["wandb"]["entity"])
     wandb.config = {
         "learning_rate": profile.lr,

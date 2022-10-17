@@ -4,17 +4,16 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 
-class Camera_in_setup:
-    def __init__(
-            self,
-            radius: float,
-            camera_nr: int
-    ):
+class CameraInSetup:
+    def __init__(self, camera_nr: int):
+        self.radius = 3.5 # in meters
         self.phi_degrees = self.get_phi_degrees_from_cam_nr(camera_nr)
         self.theta_degrees = self.get_theta_degrees_from_cam_nr(camera_nr)
         self.theta = self.theta_degrees / 360.0 * 2 * math.pi
         self.phi = self.phi_degrees / 360.0 * 2 * math.pi
-        self.radius = radius
+
+    def get_radius(self) -> float:
+        return self.radius
 
     def get_theta_degrees_from_cam_nr(self, camera_nr: int) -> float:
         interval_theta = math.floor(float(camera_nr) / 3.0)
@@ -76,11 +75,10 @@ class Camera_in_setup:
 
 
 if __name__ == "__main__":
-    radius = 3.5
     for i in range(0, 36):
         print(" ")
         print("{:3}".format(i))
-        camera = Camera_in_setup(radius, i)
+        camera = Camera_in_setup(i)
         print("--- blender ----")
         print("X: {0:.2f}".format(camera.get_x()))
         print("Y: {0:.2f}".format(camera.get_y()))
