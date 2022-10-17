@@ -1,4 +1,26 @@
-# Neural Volumes
+# My Readme
+
+## wandb
+1. Create a new project in wandb
+2. ```conda activate neuralvolumes```
+3. ``` wandb login ```
+4. paste the authorization key of the new created project
+5. fill up the ``` wandb ``` part in the ``` env.json ``` file
+
+## conda environment
+
+### Install a package
+1. ```conda activate neuralvolumes```
+2. ```conda install -c <conda-source> <package-name>``` -> On https://anaconda.org/ can be found the pacakges with the correct command
+3. Overwrite the environment.yml file in the repository: ```conda env export -f environment.yml```
+4. Check the changes via git of the environment.yml file and commit if OK
+
+### Update conda env
+
+1. ```conda activate neuralvolumes```
+2. ```conda env update --file environment.yml```
+
+# Neural Volumes - Readme from forked Repository
 
 This repository contains training and evaluation code for the paper 
 [Neural Volumes](https://arxiv.org/abs/1906.07751). The method learns a 3D
