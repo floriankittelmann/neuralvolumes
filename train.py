@@ -120,6 +120,15 @@ if __name__ == "__main__":
     print(" ".join(sys.argv))
     print("Output path:", outpath)
 
+    print("----- Train on following devices -----")
+    for device_id in args.devices:
+        print("GPU Device with ID {}".format(device_id))
+        device = torch.cuda.get_device_properties(device_id)
+        print("GPU Properties: {}, Memory: {} MB, ProzessorCount: {}".format(
+            device.name,
+            (device.total_memory / (2*1024)),
+            device.multi_processor_count))
+
     # load config
     starttime = time.time()
     experconfig = import_module(config_path, "config")
