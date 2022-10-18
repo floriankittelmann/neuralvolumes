@@ -25,7 +25,7 @@ def get_dataset(camerafilter=lambda x: True, maxframes=-1, subsampletype=None):
         subsamplesize=128,
         focal_length=focal_length_ld_pixels,
         princpt=0.0,
-        scale_factor=1.0
+        scale_factor=3.5
     )
 
 def get_autoencoder(dataset):
