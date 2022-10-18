@@ -190,8 +190,7 @@ if __name__ == "__main__":
     ae = torch.nn.DataParallel(ae, device_ids=args.devices).to("cuda").train()
     if args.resume is not None:
         ae.module.load_state_dict(torch.load("{}/aeparams.pt".format(outpath)), strict=False)
-        if has_wandb():
-            dict_wandb = torch.load(wandb.restore(checkpoint_path))
+
     print("Autoencoder instantiated ({:.2f} s)".format(time.time() - starttime))
 
     # build optimizer
@@ -221,6 +220,9 @@ if __name__ == "__main__":
                 "batch_size": profile.batchsize
             }
         )
+    if args.resume is not None and has_wandb():
+        dict_wandb = torch.load(wandb.restore(checkpoint_path))
+
     for epoch in range(epochs_to_learn):
         for data in dataloader:
             # forward
@@ -279,7 +281,7 @@ if __name__ == "__main__":
             prevloss = loss.item()
 
             # save intermediate results
-            if iternum % 100 == 0:
+            if iternum % 5 == 0:
                 torch.save(ae.module.state_dict(), "{}/aeparams.pt".format(outpath))
                 if has_wandb():
                     torch.save(dict_wandb, checkpoint_path)
