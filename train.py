@@ -220,8 +220,8 @@ if __name__ == "__main__":
                 "batch_size": profile.batchsize
             }
         )
-    if args.resume is not None and has_wandb():
-        dict_wandb = torch.load(wandb.restore(checkpoint_path))
+    #if args.resume is not None and has_wandb():
+    #    dict_wandb = torch.load(wandb.restore(checkpoint_path))
 
     for epoch in range(epochs_to_learn):
         for data in dataloader:
