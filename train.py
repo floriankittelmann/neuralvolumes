@@ -18,6 +18,7 @@ import torch.utils.data
 import json
 import shutil
 from datetime import datetime
+import re
 
 sys.dont_write_bytecode = True
 torch.backends.cudnn.benchmark = True  # gotta go fast!
@@ -79,12 +80,12 @@ def is_local_env() -> bool:
 if __name__ == "__main__":
     # parse arguments
     parser = argparse.ArgumentParser(description='Train an autoencoder')
-    parser.add_argument('datasetname', type=str,
-                        help='dataset name. a template config file is needed under config_templates and the data should be uploaded')
-    parser.add_argument('experimentname', type=str, help='define an experiment name')
+    parser.add_argument('datasetname', type=str, nargs="?", default=None, help='dataset name. a template config file is needed under config_templates and the data should be uploaded')
+    parser.add_argument('experimentname', type=str, nargs="?", default=None, help='define an experiment name')
+    parser.add_argument('--nowandb', action="store_true")
     parser.add_argument('--profile', type=str, default="Train", help='config profile')
     parser.add_argument('--devices', type=int, nargs='+', default=[0], help='devices')
-    parser.add_argument('--resume', action='store_true', help='resume training')
+    parser.add_argument('--resume', type=str, default=None, help='resume training and provide the config path')
     parser.add_argument('--nofworkers', type=int, default=16)
     parser.add_argument('--local', action='store_true',
                         help='training on local machine with small memory size and small gpu power')
@@ -94,32 +95,38 @@ if __name__ == "__main__":
             parser.add_argument(arg, type=eval)
     args = parser.parse_args()
 
-    dataset_name = args.datasetname
-    templatefilename = dataset_name + "_config.py"
-    path_template = os.path.join("config_templates", templatefilename)
-    if not os.path.exists(path_template):
-        raise Exception(path_template + " -> file does not exist ")
-    print("found config template")
+    if args.resume is None:
+        if args.datasetname is None or args.experimentname is None:
+            raise Exception("When creating new training please provide the following arguments: datasetname, experimentname")
+        dataset_name = args.datasetname
+        templatefilename = dataset_name + "_config.py"
+        path_template = os.path.join("config_templates", templatefilename)
+        if not os.path.exists(path_template):
+            raise Exception(path_template + " -> file does not exist ")
+        print("found config template")
 
-    root_experiment_path = os.path.join("experiments", dataset_name)
-    if not os.path.exists(root_experiment_path) or not os.path.isdir(root_experiment_path):
-        raise Exception(root_experiment_path + " -> directory does not exist")
-    print("found experiments path")
+        root_experiment_path = os.path.join("experiments", dataset_name)
+        if not os.path.exists(root_experiment_path) or not os.path.isdir(root_experiment_path):
+            raise Exception(root_experiment_path + " -> directory does not exist")
+        print("found experiments path")
 
-    now = datetime.now()
-    dt_string = now.strftime("%Y%m%d_%H%M%S")
-    experiment_name = args.experimentname
-    unique_experiment_name = dt_string + "_" + experiment_name
-    experiment_path = os.path.join(root_experiment_path, unique_experiment_name)
-    os.mkdir(experiment_path)
-    print("created new experiment")
+        now = datetime.now()
+        dt_string = now.strftime("%Y%m%d_%H%M%S")
+        experiment_name = args.experimentname
+        unique_experiment_name = dt_string + "_" + experiment_name
+        experiment_path = os.path.join(root_experiment_path, unique_experiment_name)
+        os.mkdir(experiment_path)
+        print("created new experiment")
 
-    config_path = os.path.join(experiment_path, "config.py")
-    shutil.copyfile(path_template, config_path)
-    print("copied config file")
+        config_path = os.path.join(experiment_path, "config.py")
+        shutil.copyfile(path_template, config_path)
+        print("copied config file")
+    else:
+        config_path = args.resume
 
     outpath = os.path.dirname(config_path)
-    log = Logger("{}/log.txt".format(outpath), args.resume)
+    checkpoint_path = os.path.join(outpath, "checkpoint.tar")
+    log = Logger("{}/log.txt".format(outpath), False if args.resume is None else True)
     print("Python", sys.version)
     print("PyTorch", torch.__version__)
     print(" ".join(sys.argv))
@@ -176,8 +183,10 @@ if __name__ == "__main__":
     ae = profile.get_autoencoder(dataset)
     torch.cuda.set_device(args.devices[0])
     ae = torch.nn.DataParallel(ae, device_ids=args.devices).to("cuda").train()
-    if args.resume:
+    if args.resume is not None:
         ae.module.load_state_dict(torch.load("{}/aeparams.pt".format(outpath)), strict=False)
+        if not args.nowandb:
+            dict_wandb = torch.load(wandb.restore(checkpoint_path))
     print("Autoencoder instantiated ({:.2f} s)".format(time.time() - starttime))
 
     # build optimizer
@@ -194,12 +203,19 @@ if __name__ == "__main__":
 
     env = get_env()
     epochs_to_learn = 10000
-    wandb.init(project=env["wandb"]["project"], entity=env["wandb"]["entity"], config={
-        "experiment_path": experiment_path,
-        "learning_rate": profile.lr,
-        "epochs": epochs_to_learn,
-        "batch_size": profile.batchsize
-    })
+    if not args.nowandb:
+        wandb.init(
+            project=env["wandb"]["project"],
+            entity=env["wandb"]["entity"],
+            resume=False if args.resume is None else True,
+            name=os.path.basename(outpath),
+            config={
+                "experiment_path": outpath,
+                "learning_rate": profile.lr,
+                "epochs": epochs_to_learn,
+                "batch_size": profile.batchsize
+            }
+        )
     for epoch in range(epochs_to_learn):
         for data in dataloader:
             # forward
@@ -210,14 +226,16 @@ if __name__ == "__main__":
                 lossweights[k] * (torch.sum(v[0]) / torch.sum(v[1]) if isinstance(v, tuple) else torch.mean(v))
                 for k, v in output["losses"].items()])
 
-            dict_wandb = {"loss": float(loss.item())}
+            dict_wandb = {"loss": float(loss.item()), "step": iternum}
             for k, v in output["losses"].items():
                 if isinstance(v, tuple):
                     dict_wandb[k] = float(torch.sum(v[0]) / torch.sum(v[1]))
                 else:
                     dict_wandb[k] = float(torch.mean(v))
-            wandb.log(dict_wandb)
-            wandb.watch(ae)
+
+            if not args.nowandb:
+                wandb.log(dict_wandb)
+                wandb.watch(ae)
 
             # print current information
             print("Iteration {}: loss = {:.5f}, ".format(iternum, float(loss.item())) +
@@ -256,11 +274,13 @@ if __name__ == "__main__":
             prevloss = loss.item()
 
             # save intermediate results
-            if iternum % 1000 == 0:
+            if iternum % 100 == 0:
                 torch.save(ae.module.state_dict(), "{}/aeparams.pt".format(outpath))
+                if not args.nowandb:
+                    torch.save(dict_wandb, checkpoint_path)
+                    wandb.save(checkpoint_path)
 
             iternum += 1
-
             torch.cuda.empty_cache()
             del loss
             del output
