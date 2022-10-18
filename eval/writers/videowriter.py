@@ -89,4 +89,4 @@ class Writer():
                 "{}".format(self.outpath_img_folder, self.nitems, self.outpath_video)
                 ).split()
         subprocess.call(command)
-        #shutil.rmtree(self.outpath_img_folder)
+        shutil.rmtree(self.outpath_img_folder)

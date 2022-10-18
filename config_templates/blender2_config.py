@@ -24,7 +24,6 @@ def get_dataset(camerafilter=lambda x: True, maxframes=-1, subsampletype=None):
         subsampletype=subsampletype,
         subsamplesize=128,
         focal_length=focal_length_ld_pixels,
-        princpt=0.0,
         scale_factor=3.5
     )
 
@@ -98,6 +97,7 @@ class Render():
         self.maxframes = maxframes
         self.showtarget = showtarget
         self.viewtemplate = viewtemplate
+        self.batchsize = 16
     def get_autoencoder(self, dataset): return get_autoencoder(dataset)
     def get_ae_args(self): return dict(outputlist=["irgbrec"], viewtemplate=self.viewtemplate)
     def get_dataset(self):

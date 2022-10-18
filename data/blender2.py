@@ -16,13 +16,12 @@ class Dataset(torch.utils.data.Dataset):
             camerafilter,
             keyfilter,
             framelist,
+            focal_length,
             subsampletype=None,
             subsamplesize=0,
             imagemean=100.,
             imagestd=25.,
-            scale_factor=1.0,
-            focal_length=1000.0,
-            princpt=1000.0
+            scale_factor=1.0
     ):
         # get options
         self.allcameras = []
@@ -31,6 +30,8 @@ class Dataset(torch.utils.data.Dataset):
         self.focal = {}
         self.princpt = {}
 
+        self.width = 1024
+        self.height = 667
         for camera_nr in range(36):
             camera_str = "{:03d}".format(camera_nr)
             camera = CameraInSetup(camera_nr)
@@ -44,7 +45,7 @@ class Dataset(torch.utils.data.Dataset):
             self.focal[camera_str] = np.array([focal_length, focal_length])
 
             # in my opinion should be [0, 0] because the
-            self.princpt[camera_str] = np.array([princpt, princpt])
+            self.princpt[camera_str] = np.array([self.height * 0.5, self.width * 0.5])
 
         self.cameras = list(filter(camerafilter, self.allcameras))
         self.framelist = framelist
@@ -76,7 +77,7 @@ class Dataset(torch.utils.data.Dataset):
             "rot": self.camrot[k],
             "focal": self.focal[k],
             "princpt": self.princpt[k],
-            "size": np.array([667, 1024])}
+            "size": np.array([self.height, self.width])}
             for k in self.cameras}
 
     def get_allcameras(self):

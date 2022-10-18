@@ -1,36 +1,20 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
-# All rights reserved.
-#
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
-#
-"""Render object from training camera viewpoint or novel viewpoints."""
 import argparse
-import importlib
-import importlib.util
 import os
 import sys
 import time
-sys.dont_write_bytecode = True
 
-import torch
 import torch.utils.data
-torch.backends.cudnn.benchmark = True # gotta go fast!
+from train import import_module
+from train import is_local_env
 
-def import_module(file_path, module_name):
-    spec = importlib.util.spec_from_file_location(module_name, file_path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    sys.modules[module_name] = module
-    return module
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Render')
     parser.add_argument('experconfig', type=str, help='experiment config')
-    parser.add_argument('--profile', type=str, default="Render", help='config profile')
+    parser.add_argument('--profile', type=str, default="Render", help='profile')
     parser.add_argument('--devices', type=int, nargs='+', default=[0], help='devices')
-    parser.add_argument('--batchsize', type=int, default=16, help='batchsize')
-    parser.add_argument('--maxframes', type=int, default=-1)
+    parser.add_argument('--nofworkers', type=int, default=16, help='nofworkers')
+    args = parser.parse_args()
     parsed, unknown = parser.parse_known_args()
     for arg in unknown:
         if arg.startswith(("-", "--")):
@@ -38,34 +22,39 @@ def parse_arguments():
     args = parser.parse_args()
     return args, parsed
 
+
 if __name__ == "__main__":
-    # parse arguments
     args, parsed = parse_arguments()
     outpath = os.path.dirname(args.experconfig)
     print(" ".join(sys.argv))
     print("Output path:", outpath)
 
-    # load config
+    print("----- Evaluate on following devices -----")
+    for device_id in args.devices:
+        print("GPU Device with ID {}".format(device_id))
+        device = torch.cuda.get_device_properties(device_id)
+        print("GPU Properties: {}, Memory: {} MB, ProzessorCount: {}".format(
+            device.name,
+            (device.total_memory / (2 * 1024)),
+            device.multi_processor_count))
+
     experconfig = import_module(args.experconfig, "config")
     profile = getattr(experconfig, args.profile)(**{k: v for k, v in vars(args).items() if k not in parsed})
-
-    # load datasets
     dataset = profile.get_dataset()
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batchsize, shuffle=False, num_workers=1)
-
-    # data writer
-    writer = profile.get_writer()
-
-    # build autoencoder
+    nof_workers = args.nofworkers
+    batch_size_training = profile.batchsize
+    if is_local_env():
+        nof_workers = 1
+        batch_size_training = 3
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size_training, shuffle=True, drop_last=True, num_workers=nof_workers)
     ae = profile.get_autoencoder(dataset)
     ae = torch.nn.DataParallel(ae, device_ids=args.devices).to("cuda").eval()
 
+    writer = profile.get_writer()
+    print("--- I am finished ----")
+
     # load
-    state_dict = ae.module.state_dict()
-    trained_state_dict = torch.load("{}/aeparams.pt".format(outpath))
-    trained_state_dict = {k: v for k, v in trained_state_dict.items() if k in state_dict}
-    state_dict.update(trained_state_dict)
-    ae.module.load_state_dict(state_dict, strict=False)
+    ae.module.load_state_dict(torch.load("{}/aeparams.pt".format(outpath)), strict=False)
 
     # eval
     iternum = 0
@@ -75,10 +64,12 @@ if __name__ == "__main__":
     with torch.no_grad():
         for data in dataloader:
             b = next(iter(data.values())).size(0)
-
             # forward
             output = ae(iternum, [], **{k: x.to("cuda") for k, x in data.items()}, **profile.get_ae_args())
+            print(type(output["decout"]))
 
+            break
+            """
             writer.batch(iternum, itemnum + torch.arange(b), **data, **output)
 
             endtime = time.time()
@@ -87,7 +78,8 @@ if __name__ == "__main__":
             starttime = time.time()
 
             iternum += 1
-            itemnum += b
+            itemnum += b"""
 
     # cleanup
-    writer.finalize()
+    #writer.finalize()
+

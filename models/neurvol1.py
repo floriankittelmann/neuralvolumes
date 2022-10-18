@@ -54,6 +54,7 @@ class Autoencoder(nn.Module):
         # decode
         decout = self.decoder(encoding, campos, losslist)
         result["losses"].update(decout["losses"])
+        result["decout"] = decout
 
         # NHWC
         raydir = (pixelcoords - princpt[:, None, None, :]) / focal[:, None, None, :]

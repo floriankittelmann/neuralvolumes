@@ -77,10 +77,6 @@ def is_local_env() -> bool:
     return get_env()["env"] == "local"
 
 
-def has_wandb() -> bool:
-    return get_env()["env"] == "prod"
-
-
 if __name__ == "__main__":
     # parse arguments
     parser = argparse.ArgumentParser(description='Train an autoencoder')
@@ -207,21 +203,20 @@ if __name__ == "__main__":
 
     env = get_env()
     epochs_to_learn = 10000
-    if has_wandb():
-        wandb.init(
-            project=env["wandb"]["project"],
-            entity=env["wandb"]["entity"],
-            resume=False if args.resume is None else True,
-            name=os.path.basename(outpath),
-            config={
-                "experiment_path": outpath,
-                "learning_rate": profile.lr,
-                "epochs": epochs_to_learn,
-                "batch_size": profile.batchsize
-            }
-        )
-    #if args.resume is not None and has_wandb():
-    #    dict_wandb = torch.load(wandb.restore(checkpoint_path))
+
+    run = wandb.init(
+        project=env["wandb"]["project"],
+        entity=env["wandb"]["entity"],
+        name=os.path.basename(outpath),
+        config={
+            "experiment_path": outpath,
+            "learning_rate": profile.lr,
+            "epochs": epochs_to_learn,
+            "batch_size": profile.batchsize,
+            "mode": "offline"
+        }
+    )
+    print("wandb sync " + os.path.dirname(run.dir))
 
     for epoch in range(epochs_to_learn):
         for data in dataloader:
@@ -239,10 +234,7 @@ if __name__ == "__main__":
                     dict_wandb[k] = float(torch.sum(v[0]) / torch.sum(v[1]))
                 else:
                     dict_wandb[k] = float(torch.mean(v))
-
-            if has_wandb():
-                wandb.log(dict_wandb)
-                wandb.watch(ae)
+            wandb.log(dict_wandb)
 
             # print current information
             print("Iteration {}: loss = {:.5f}, ".format(iternum, float(loss.item())) +
@@ -281,11 +273,8 @@ if __name__ == "__main__":
             prevloss = loss.item()
 
             # save intermediate results
-            if iternum % 5 == 0:
+            if iternum % 1000 == 0:
                 torch.save(ae.module.state_dict(), "{}/aeparams.pt".format(outpath))
-                if has_wandb():
-                    torch.save(dict_wandb, checkpoint_path)
-                    wandb.save(checkpoint_path)
 
             iternum += 1
             torch.cuda.empty_cache()
