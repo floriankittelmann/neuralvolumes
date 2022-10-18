@@ -17,8 +17,8 @@ class VolSampler(nn.Module):
     def forward(self, pos, template, warp=None, gwarps=None, gwarprot=None, gwarpt=None, viewtemplate=False, **kwargs):
         valid = None
         if pos.dtype == torch.float64:
-            cuda0 = torch.device('cuda:0')
-            pos = pos.type(torch.FloatTensor).to(cuda0)
+            cur_device = torch.cuda.current_device()
+            pos = pos.type(torch.FloatTensor).to(cur_device)
         if not viewtemplate:
             if gwarps is not None:
                 pos = (torch.sum(
