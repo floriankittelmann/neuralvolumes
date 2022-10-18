@@ -77,12 +77,16 @@ def is_local_env() -> bool:
     return get_env()["env"] == "local"
 
 
+def has_wandb() -> bool:
+    return get_env()["env"] == "prod"
+
+
 if __name__ == "__main__":
     # parse arguments
     parser = argparse.ArgumentParser(description='Train an autoencoder')
-    parser.add_argument('datasetname', type=str, nargs="?", default=None, help='dataset name. a template config file is needed under config_templates and the data should be uploaded')
+    parser.add_argument('datasetname', type=str, nargs="?", default=None,
+                        help='dataset name. a template config file is needed under config_templates and the data should be uploaded')
     parser.add_argument('experimentname', type=str, nargs="?", default=None, help='define an experiment name')
-    parser.add_argument('--nowandb', action="store_true")
     parser.add_argument('--profile', type=str, default="Train", help='config profile')
     parser.add_argument('--devices', type=int, nargs='+', default=[0], help='devices')
     parser.add_argument('--resume', type=str, default=None, help='resume training and provide the config path')
@@ -97,7 +101,8 @@ if __name__ == "__main__":
 
     if args.resume is None:
         if args.datasetname is None or args.experimentname is None:
-            raise Exception("When creating new training please provide the following arguments: datasetname, experimentname")
+            raise Exception(
+                "When creating new training please provide the following arguments: datasetname, experimentname")
         dataset_name = args.datasetname
         templatefilename = dataset_name + "_config.py"
         path_template = os.path.join("config_templates", templatefilename)
@@ -185,7 +190,7 @@ if __name__ == "__main__":
     ae = torch.nn.DataParallel(ae, device_ids=args.devices).to("cuda").train()
     if args.resume is not None:
         ae.module.load_state_dict(torch.load("{}/aeparams.pt".format(outpath)), strict=False)
-        if not args.nowandb:
+        if has_wandb():
             dict_wandb = torch.load(wandb.restore(checkpoint_path))
     print("Autoencoder instantiated ({:.2f} s)".format(time.time() - starttime))
 
@@ -203,7 +208,7 @@ if __name__ == "__main__":
 
     env = get_env()
     epochs_to_learn = 10000
-    if not args.nowandb:
+    if has_wandb():
         wandb.init(
             project=env["wandb"]["project"],
             entity=env["wandb"]["entity"],
@@ -233,7 +238,7 @@ if __name__ == "__main__":
                 else:
                     dict_wandb[k] = float(torch.mean(v))
 
-            if not args.nowandb:
+            if has_wandb():
                 wandb.log(dict_wandb)
                 wandb.watch(ae)
 
@@ -276,7 +281,7 @@ if __name__ == "__main__":
             # save intermediate results
             if iternum % 100 == 0:
                 torch.save(ae.module.state_dict(), "{}/aeparams.pt".format(outpath))
-                if not args.nowandb:
+                if has_wandb():
                     torch.save(dict_wandb, checkpoint_path)
                     wandb.save(checkpoint_path)
 
