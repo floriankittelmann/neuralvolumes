@@ -16,8 +16,8 @@ import numpy as np
 import os
 import torch.utils.data
 import json
-import uuid
 import shutil
+from datetime import datetime
 
 sys.dont_write_bytecode = True
 torch.backends.cudnn.benchmark = True  # gotta go fast!
@@ -71,13 +71,16 @@ def get_env() -> dict:
             env_dict = json.load(json_content)
     return env_dict
 
+
 def is_local_env() -> bool:
     return get_env()["env"] == "local"
+
 
 if __name__ == "__main__":
     # parse arguments
     parser = argparse.ArgumentParser(description='Train an autoencoder')
-    parser.add_argument('datasetname', type=str, help='dataset name. a template config file is needed under config_templates and the data should be uploaded')
+    parser.add_argument('datasetname', type=str,
+                        help='dataset name. a template config file is needed under config_templates and the data should be uploaded')
     parser.add_argument('experimentname', type=str, help='define an experiment name')
     parser.add_argument('--profile', type=str, default="Train", help='config profile')
     parser.add_argument('--devices', type=int, nargs='+', default=[0], help='devices')
@@ -103,8 +106,10 @@ if __name__ == "__main__":
         raise Exception(root_experiment_path + " -> directory does not exist")
     print("found experiments path")
 
+    now = datetime.now()
+    dt_string = now.strftime("%Y%m%d_%H%M%S")
     experiment_name = args.experimentname
-    unique_experiment_name = "" + experiment_name + "_" + str(uuid.uuid4())
+    unique_experiment_name = dt_string + "_" + experiment_name
     experiment_path = os.path.join(root_experiment_path, unique_experiment_name)
     os.mkdir(experiment_path)
     print("created new experiment")
@@ -126,7 +131,7 @@ if __name__ == "__main__":
         device = torch.cuda.get_device_properties(device_id)
         print("GPU Properties: {}, Memory: {} MB, ProzessorCount: {}".format(
             device.name,
-            (device.total_memory / (2*1024)),
+            (device.total_memory / (2 * 1024)),
             device.multi_processor_count))
 
     # load config
@@ -169,6 +174,7 @@ if __name__ == "__main__":
     # build autoencoder
     starttime = time.time()
     ae = profile.get_autoencoder(dataset)
+    torch.cuda.set_device(args.devices[0])
     ae = torch.nn.DataParallel(ae, device_ids=args.devices).to("cuda").train()
     if args.resume:
         ae.module.load_state_dict(torch.load("{}/aeparams.pt".format(outpath)), strict=False)
@@ -215,7 +221,8 @@ if __name__ == "__main__":
 
             # print current information
             print("Iteration {}: loss = {:.5f}, ".format(iternum, float(loss.item())) +
-                  ", ".join(["{} = {:.5f}".format(k, float(torch.sum(v[0]) / torch.sum(v[1]) if isinstance(v, tuple) else torch.mean(v)))
+                  ", ".join(["{} = {:.5f}".format(k, float(
+                      torch.sum(v[0]) / torch.sum(v[1]) if isinstance(v, tuple) else torch.mean(v)))
                              for k, v in output["losses"].items()]), end="")
             if iternum % 10 == 0:
                 endtime = time.time()
