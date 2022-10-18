@@ -7,7 +7,6 @@ import torch.utils.data
 from train import import_module
 from train import is_local_env
 
-
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Render')
     parser.add_argument('experconfig', type=str, help='experiment config')
@@ -51,7 +50,6 @@ if __name__ == "__main__":
     ae = torch.nn.DataParallel(ae, device_ids=args.devices).to("cuda").eval()
 
     writer = profile.get_writer()
-    print("--- I am finished ----")
 
     # load
     ae.module.load_state_dict(torch.load("{}/aeparams.pt".format(outpath)), strict=False)
@@ -66,10 +64,19 @@ if __name__ == "__main__":
             b = next(iter(data.values())).size(0)
             # forward
             output = ae(iternum, [], **{k: x.to("cuda") for k, x in data.items()}, **profile.get_ae_args())
-            print(type(output["decout"]))
+            """print("----- output -------")
+            print(output["decout"].keys())
+            print(type(output["decout"]["warp"]))
+            print(type(output["decout"]["template"]))
+            raise Exception("test")
 
-            break
-            """
+            decout = output["decout"]
+            volsampler = volsamplerlib.VolSampler()
+            sample_rgb, sample_alpha = volsampler(raypos[:, None, :, :, :], **decout, viewtemplate=viewtemplate)
+            print("----- volsampler output -------")
+            print(type(sample_rgb))
+            print(type(sample_alpha))"""
+
             writer.batch(iternum, itemnum + torch.arange(b), **data, **output)
 
             endtime = time.time()
@@ -78,8 +85,8 @@ if __name__ == "__main__":
             starttime = time.time()
 
             iternum += 1
-            itemnum += b"""
+            itemnum += b
 
     # cleanup
-    #writer.finalize()
+    writer.finalize()
 
