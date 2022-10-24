@@ -6,6 +6,7 @@ from train import import_module
 from train import is_local_env
 from torch.utils.data import DataLoader
 from render_2 import parse_arguments
+import numpy as np
 
 if __name__ == "__main__":
     args, parsed = parse_arguments()
@@ -77,10 +78,12 @@ if __name__ == "__main__":
             np_template = template_tensor.cpu().numpy()
             print(type(np_template))
             print(np_template.shape)
-
+            np.save(os.path.join(outpath, "batch_{}.npy".format(iternum)), np_template)
             """ NoneType??
             print(" ")
             print(" ")
             print("output -> decout -> warp")
             print(type(output["decout"]["warp"]))"""
             exit()
+            iternum += 1
+            itemnum += b
