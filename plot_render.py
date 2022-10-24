@@ -52,8 +52,13 @@ if __name__ == "__main__":
             b = next(iter(data.values())).size(0)
             # forward
             output = ae(iternum, [], **{k: x.to("cuda") for k, x in data.items()}, **profile.get_ae_args())
+            print("output")
             print(output.keys())
-            print(type(output["template"]))
+
+            print("output -> irgbrec")
             print(type(output["irgbrec"]))
+
+            print("output -> decout")
+            print(type(output["decout"]))
             print(output["decout"].keys())
             exit()
