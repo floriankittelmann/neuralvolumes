@@ -24,7 +24,7 @@ def get_dataset(camerafilter=lambda x: True, maxframes=-1, subsampletype=None):
         subsampletype=subsampletype,
         subsamplesize=128,
         focal_length=focal_length_ld_pixels,
-        scale_factor=1.9
+        scale_factor=3.5
     )
 
 def get_autoencoder(dataset):
@@ -92,7 +92,7 @@ class Render():
     """Render model with training camera or from novel viewpoints.
     
     e.g., python render.py {configpath} Render --maxframes 128"""
-    def __init__(self, cam=None, maxframes=-1, showtarget=False, viewtemplate=False):
+    def __init__(self, cam="rotate", maxframes=-1, showtarget=False, viewtemplate=False):
         self.cam = cam
         self.maxframes = maxframes
         self.showtarget = showtarget
@@ -104,11 +104,12 @@ class Render():
         import data.utils
         import eval.cameras.rotate as cameralib
         dataset = get_dataset(camerafilter=lambda x: x == self.cam, maxframes=self.maxframes)
-        if self.cam is None:
+        if self.cam == "rotate":
             camdataset = cameralib.Dataset(len(dataset))
             return data.utils.JoinDataset(camdataset, dataset)
         else:
             return dataset
+
     def get_writer(self):
         import eval.writers.videowriter as writerlib
         return writerlib.Writer(

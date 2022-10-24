@@ -6,7 +6,6 @@
 #
 import numpy as np
 
-import torch
 import torch.utils.data
 
 class Dataset(torch.utils.data.Dataset):
@@ -32,13 +31,13 @@ class Dataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         t = (np.cos(idx * 2. * np.pi / self.period) * 0.5 + 0.5)
-        x = np.cos(t * 0.5 * np.pi + 0.25 * np.pi) * 3.
-        y = 0.5
-        z = np.sin(t * 0.5 * np.pi + 0.25 * np.pi) * 3.
+        x = np.cos(t * 0.5 * np.pi + 0.25 * np.pi) * 3.5
+        y = np.sin(t * 0.5 * np.pi + 0.25 * np.pi) * 3.5
+        z = 0.5
         campos = np.array([x, y, z], dtype=np.float32)
 
         lookat = np.array([0., 0., 0.], dtype=np.float32)
-        up = np.array([0., -1., 0.], dtype=np.float32)
+        up = np.array([0., 0., 1.], dtype=np.float32)
         forward = lookat - campos
         forward /= np.linalg.norm(forward)
         right = np.cross(up, forward)

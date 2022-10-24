@@ -58,11 +58,12 @@ if __name__ == "__main__":
 
     # build autoencoder
     ae = profile.get_autoencoder(dataset)
+    torch.cuda.set_device(args.devices[0])
     ae = torch.nn.DataParallel(ae, device_ids=args.devices).to("cuda").eval()
 
     # load
     state_dict = ae.module.state_dict()
-    trained_state_dict = torch.load("{}/aeparams.pt".format(outpath))
+    trained_state_dict = torch.load("{}/aeparams.pt".format(outpath), map_location=torch.device('cuda', args.devices[0]))
     trained_state_dict = {k: v for k, v in trained_state_dict.items() if k in state_dict}
     state_dict.update(trained_state_dict)
     ae.module.load_state_dict(state_dict, strict=False)
