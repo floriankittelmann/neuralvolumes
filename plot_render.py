@@ -73,6 +73,9 @@ if __name__ == "__main__":
             print(type(output["decout"]["template"]))
             print(output["decout"]["template"].size())
 
+            template_tensor = output["decout"]["template"]
+            print(template_tensor[0, :, 0, 0, 0])
+
             """ NoneType??
             print(" ")
             print(" ")
