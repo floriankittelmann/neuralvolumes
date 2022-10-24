@@ -78,7 +78,10 @@ if __name__ == "__main__":
             np_template = template_tensor.cpu().numpy()
             print(type(np_template))
             print(np_template.shape)
-            np.save(os.path.join(outpath, "batch_{}.npy".format(iternum)), np_template)
+
+            sample_rgb, sample_alpha = self.volsampler(raypos[:, None, :, :, :], **decout, viewtemplate=viewtemplate)
+
+            #np.save(os.path.join(outpath, "batch_{}.npy".format(iternum)), np_template)
             """ NoneType??
             print(" ")
             print(" ")

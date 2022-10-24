@@ -82,10 +82,6 @@ class Autoencoder(nn.Module):
         t = t - self.dt * torch.rand_like(t)
 
         raypos = campos[:, None, None, :] + raydir * t[..., None] # NHWC
-        """print("---- raypos -----")
-        print(raypos[:, None, :, :, :].size())
-        print(raypos[:, None, :, :, :])
-        raise Exception("test")"""
         rayrgb = torch.zeros_like(raypos.permute(0, 3, 1, 2)) # NCHW
         rayalpha = torch.zeros_like(rayrgb[:, 0:1, :, :]) # NCHW
 
@@ -94,11 +90,10 @@ class Autoencoder(nn.Module):
         while not done.all():
             valid = torch.prod(torch.gt(raypos, -1.0) * torch.lt(raypos, 1.0), dim=-1).byte()
             validf = valid.float()
-
+            print(raypos.size())
+            print(raypos[:, None, :, :, :].size())
+            exit()
             sample_rgb, sample_alpha = self.volsampler(raypos[:, None, :, :, :], **decout, viewtemplate=viewtemplate)
-            """print("---- vol sampler -----")
-            print(sample_rgb.size())
-            print(sample_alpha.size())"""
             with torch.no_grad():
                 step = self.dt * torch.exp(self.stepjitter * torch.randn_like(t))
                 done = done | ((t + step) >= tmax)
