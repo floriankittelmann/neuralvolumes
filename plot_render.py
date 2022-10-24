@@ -53,5 +53,7 @@ if __name__ == "__main__":
             # forward
             output = ae(iternum, [], **{k: x.to("cuda") for k, x in data.items()}, **profile.get_ae_args())
             print(output.keys())
+            print(type(output["template"]))
+            print(type(output["irgbrec"]))
             print(output["decout"].keys())
             exit()
