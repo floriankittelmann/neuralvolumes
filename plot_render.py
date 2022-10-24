@@ -57,8 +57,23 @@ if __name__ == "__main__":
 
             print("output -> irgbrec")
             print(type(output["irgbrec"]))
+            print(output["irgbrec"].size())
+
+            print(" ")
+            print(" ")
 
             print("output -> decout")
             print(type(output["decout"]))
             print(output["decout"].keys())
+
+            print(" ")
+            print(" ")
+
+            print("output -> decout -> template")
+            print(type(output["decout"]["template"]))
+
+            print(" ")
+            print(" ")
+            print("output -> decout -> warp")
+            print(type(output["decout"]["warp"]))
             exit()
