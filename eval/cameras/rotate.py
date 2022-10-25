@@ -30,7 +30,7 @@ class Dataset(torch.utils.data.Dataset):
         return {"rotate": {
             "focal": self.focal,
             "princpt": self.princpt,
-            "size": np.array([self.width, self.height]).astype(np.float32)}}
+            "size": np.array([self.width, self.height])}}
 
     def __getitem__(self, idx):
         # t = (np.cos(idx * 2. * np.pi / self.period) * 0.5 + 0.5)

@@ -76,9 +76,9 @@ class CameraInSetup:
     def get_focal_length(self):
         focal_length_blender = 40.0
         sensor_width_longer_distance_blender = 36.0
-        sensor_width_shorter_distance_blender = sensor_width_longer_distance_blender / self.get_img_width() * self.get_img_height()
-        focal_length_ld_pixels = focal_length_blender / sensor_width_longer_distance_blender * self.get_img_width()
-        focal_length_sd_pixels = focal_length_blender / sensor_width_shorter_distance_blender * self.get_img_height()
+        sensor_width_shorter_distance_blender = sensor_width_longer_distance_blender / float(self.get_img_width()) * float(self.get_img_height())
+        focal_length_ld_pixels = focal_length_blender / sensor_width_longer_distance_blender * float(self.get_img_width())
+        focal_length_sd_pixels = focal_length_blender / sensor_width_shorter_distance_blender * float(self.get_img_height())
         if focal_length_ld_pixels != focal_length_sd_pixels:
             raise Exception("they should be the same")
         return focal_length_ld_pixels
@@ -86,11 +86,11 @@ class CameraInSetup:
     def get_principt(self):
         return [self.get_img_width() * 0.5, self.get_img_height() * 0.5]
 
-    def get_img_height(self):
-        return 667.0
+    def get_img_height(self) -> int:
+        return 667
 
-    def get_img_width(self):
-        return 1024.0
+    def get_img_width(self) -> int:
+        return 1024
 
 
 if __name__ == "__main__":
