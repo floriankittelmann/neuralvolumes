@@ -18,7 +18,7 @@ class Dataset(torch.utils.data.Dataset):
         self.width, self.height = self.camera.get_img_width(), self.camera.get_img_height() + 1
 
         self.focal = np.array([self.camera.get_focal_length(), self.camera.get_focal_length()], dtype=np.float32)
-        self.princpt = np.array(self.camera.get_principt(), dtype=np.float32)
+        self.princpt = np.array([0.0, 0.0], dtype=np.float32)
 
     def __len__(self):
         return self.length

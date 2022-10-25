@@ -49,10 +49,8 @@ class Writer():
     def batch(self, iternum, itemnum, irgbrec, ialpharec=None, image=None, irgbsqerr=None, **kwargs):
         irgbrec = irgbrec.data.to("cpu").numpy().transpose((0, 2, 3, 1))
         if ialpharec is not None:
-            print("ialpharec is not none")
             ialpharec = ialpharec.data.to("cpu").numpy()[:, 0, :, :, None]
         else:
-            print("ialpharec is none")
             ialpharec = 1.0
 
         # color correction
