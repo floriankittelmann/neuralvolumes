@@ -26,7 +26,7 @@ def writeimage(x):
     Image.fromarray(imgout).save(os.path.join(outpath, "{:06}.jpg".format(itemnum)))
 
 class Writer():
-    def __init__(self, outpath, filename, showtarget=False, showdiff=False, bgcolor=[0., 0., 0.], colcorrect=[1.35, 1.16, 1.5], nthreads=16):
+    def __init__(self, outpath, filename, showtarget=False, showdiff=False, bgcolor=[0., 0., 0.], colcorrect=[1., 1., 1.], nthreads=16):
         self.showtarget = showtarget
         self.showdiff = showdiff
         self.bgcolor = np.array(bgcolor, dtype=np.float32)
