@@ -34,7 +34,7 @@ class Dataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         # t = (np.cos(idx * 2. * np.pi / self.period) * 0.5 + 0.5)
-        campos = self.camera.get_cam_pos_training().astype(np.float32)
+        campos = self.camera.get_cam_pos_training().astype(np.float32) / 3.5
 
         """lookat = np.array([0., 0., 0.], dtype=np.float32)
         up = np.array([0., 0., 1.], dtype=np.float32)
