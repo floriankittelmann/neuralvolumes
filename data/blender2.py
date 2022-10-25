@@ -16,7 +16,6 @@ class Dataset(torch.utils.data.Dataset):
             camerafilter,
             keyfilter,
             framelist,
-            focal_length,
             subsampletype=None,
             subsamplesize=0,
             imagemean=100.,
@@ -42,10 +41,8 @@ class Dataset(torch.utils.data.Dataset):
             self.camrot[camera_str] = camera.get_cam_rot_matrix_training()
 
             # the focal length does not needed to normalize because it is given in px
-            self.focal[camera_str] = np.array([focal_length, focal_length])
-
-            # TODO: Check here what is correct 0.0 or half the width, height?
-            self.princpt[camera_str] = np.array([self.height * 0.5, self.width * 0.5])
+            self.focal[camera_str] = np.array([camera.get_focal_length(), camera.get_focal_length()])
+            self.princpt[camera_str] = np.array(camera.get_principt())
 
         self.cameras = list(filter(camerafilter, self.allcameras))
         self.framelist = framelist

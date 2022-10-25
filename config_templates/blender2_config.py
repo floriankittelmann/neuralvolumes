@@ -8,13 +8,6 @@ import os
 import data.blender2 as datamodel
 
 def get_dataset(camerafilter=lambda x: True, maxframes=-1, subsampletype=None):
-    focal_length_blender = 40.0
-    sensor_width_longer_distance_blender = 36.0
-    sensor_width_shorter_distance_blender = sensor_width_longer_distance_blender / 1024.0 * 668.0
-    focal_length_ld_pixels = focal_length_blender / sensor_width_longer_distance_blender * 1024.0
-    focal_length_sd_pixels = focal_length_blender / sensor_width_shorter_distance_blender * 668.0
-    if focal_length_ld_pixels != focal_length_sd_pixels:
-        raise Exception("they should be the same")
     return datamodel.Dataset(
         camerafilter=camerafilter,
         framelist=[i for i in range(1, 502, 3)][:maxframes],
@@ -23,7 +16,6 @@ def get_dataset(camerafilter=lambda x: True, maxframes=-1, subsampletype=None):
         imagestd=25.,
         subsampletype=subsampletype,
         subsamplesize=128,
-        focal_length=focal_length_ld_pixels,
         scale_factor=3.5
     )
 

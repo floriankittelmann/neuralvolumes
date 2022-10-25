@@ -9,14 +9,16 @@ import numpy as np
 import torch.utils.data
 from data.blender2_utils import CameraInSetup
 
+
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, length, period=128):
+        self.camera = CameraInSetup(1)
         self.length = length
         self.period = period
-        self.width, self.height = 480, 640
+        self.width, self.height = self.camera.get_img_width(), self.camera.get_img_height()
 
-        self.focal = np.array([1000. * (self.width / 480.), 1000. * (self.width / 480.)], dtype=np.float32)
-        self.princpt = np.array([self.width * 0.5, self.height * 0.5], dtype=np.float32)
+        self.focal = np.array([self.camera.get_focal_length(), self.camera.get_focal_length()], dtype=np.float32)
+        self.princpt = np.array(self.camera.get_principt(), dtype=np.float32)
 
     def __len__(self):
         return self.length
@@ -26,17 +28,13 @@ class Dataset(torch.utils.data.Dataset):
 
     def get_krt(self):
         return {"rotate": {
-                "focal": self.focal,
-                "princpt": self.princpt,
-                "size": np.array([self.width, self.height])}}
+            "focal": self.focal,
+            "princpt": self.princpt,
+            "size": np.array([self.width, self.height])}}
 
     def __getitem__(self, idx):
-        #t = (np.cos(idx * 2. * np.pi / self.period) * 0.5 + 0.5)
-        camera = CameraInSetup(1)
-        x = camera.get_x()
-        y = camera.get_y()
-        z = camera.get_z()
-        campos = np.array([x, y, z], dtype=np.float32)
+        # t = (np.cos(idx * 2. * np.pi / self.period) * 0.5 + 0.5)
+        campos = self.camera.get_cam_pos_training()
 
         """lookat = np.array([0., 0., 0.], dtype=np.float32)
         up = np.array([0., 0., 1.], dtype=np.float32)
@@ -47,7 +45,7 @@ class Dataset(torch.utils.data.Dataset):
         up = np.cross(forward, right)
         up /= np.linalg.norm(up)"""
 
-        camrot = camera.get_cam_rot_matrix_training()
+        camrot = self.camera.get_cam_rot_matrix_training()
 
         px, py = np.meshgrid(np.arange(self.width).astype(np.float32), np.arange(self.height).astype(np.float32))
         pixelcoords = np.stack((px, py), axis=-1)

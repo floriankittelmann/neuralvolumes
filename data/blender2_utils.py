@@ -73,12 +73,31 @@ class CameraInSetup:
         final_matrix = final_matrix.dot(z_rot_matrix)
         return final_matrix.astype(np.float32)
 
+    def get_focal_length(self):
+        focal_length_blender = 40.0
+        sensor_width_longer_distance_blender = 36.0
+        sensor_width_shorter_distance_blender = sensor_width_longer_distance_blender / self.get_img_width() * self.get_img_height()
+        focal_length_ld_pixels = focal_length_blender / sensor_width_longer_distance_blender * self.get_img_width()
+        focal_length_sd_pixels = focal_length_blender / sensor_width_shorter_distance_blender * self.get_img_height()
+        if focal_length_ld_pixels != focal_length_sd_pixels:
+            raise Exception("they should be the same")
+        return focal_length_ld_pixels
+
+    def get_principt(self):
+        return [self.get_img_width() * 0.5, self.get_img_height() * 0.5]
+
+    def get_img_height(self):
+        return 667.0
+
+    def get_img_width(self):
+        return 1024.0
+
 
 if __name__ == "__main__":
     for i in range(0, 36):
         print(" ")
         print("{:3}".format(i))
-        camera = Camera_in_setup(i)
+        camera = CameraInSetup(i)
         print("--- blender ----")
         print("X: {0:.2f}".format(camera.get_x()))
         print("Y: {0:.2f}".format(camera.get_y()))
