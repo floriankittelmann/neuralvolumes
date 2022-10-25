@@ -94,9 +94,6 @@ if __name__ == "__main__":
             render(profile)
     else:
         print(args.cam)
-        profile.set_cam(args.cam)
+        profile.cam = args.cam
         print(profile.cam)
-        dataloader = DataLoader(dataset, batch_size=batch_size_training, shuffle=False, drop_last=True,
-                                num_workers=nof_workers)
-        writer = profile.get_writer()
         render(profile)
