@@ -29,7 +29,7 @@ def get_autoencoder(dataset):
     return aemodel.Autoencoder(
         dataset,
         encoderlib.Encoder(3),
-        decoderlib.Decoder(globalwarp=True, warptype="affinemix", viewconditioned=True),
+        decoderlib.Decoder(globalwarp=True, warptype="affinemix", viewconditioned=False),
         volsamplerlib.VolSampler(),
         colorcalib.Colorcal(dataset.get_allcameras()),
         4. / 256)
