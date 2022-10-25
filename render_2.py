@@ -2,10 +2,7 @@ import argparse
 import os
 import sys
 import time
-
 import torch.utils.data
-
-from eval.writers.videowriter import Writer
 from train import import_module
 from train import is_local_env
 from torch.utils.data import DataLoader
@@ -28,8 +25,14 @@ def parse_arguments():
 
 
 def render(profile):
-    dataloader_render = DataLoader(dataset, batch_size=batch_size_training, shuffle=False, drop_last=True,
-                            num_workers=nof_workers)
+    dataset = profile.get_dataset()
+    ae = profile.get_autoencoder(dataset)
+    torch.cuda.set_device(args.devices[0])
+    ae = torch.nn.DataParallel(ae, device_ids=args.devices).to("cuda").eval()
+    # load
+    ae.module.load_state_dict(torch.load("{}/aeparams.pt".format(outpath), map_location=torch.device('cuda', args.devices[0])), strict=False)
+
+    dataloader_render = DataLoader(dataset, batch_size=batch_size_training, shuffle=False, drop_last=True, num_workers=nof_workers)
     render_writer = profile.get_writer()
 
     iternum = 0
@@ -72,23 +75,17 @@ if __name__ == "__main__":
 
     experconfig = import_module(args.experconfig, "config")
     profile = getattr(experconfig, args.profile)(**{k: v for k, v in vars(args).items() if k not in parsed})
-    dataset = profile.get_dataset()
     nof_workers = args.nofworkers
     batch_size_training = profile.batchsize
     if is_local_env():
         nof_workers = 1
         batch_size_training = 3
-    ae = profile.get_autoencoder(dataset)
-    torch.cuda.set_device(args.devices[0])
-    ae = torch.nn.DataParallel(ae, device_ids=args.devices).to("cuda").eval()
 
-    # load
-    ae.module.load_state_dict(
-        torch.load("{}/aeparams.pt".format(outpath), map_location=torch.device('cuda', args.devices[0])), strict=False)
 
     # eval
     if args.cam == "all":
-        for camera in dataset.get_allcameras():
+        for camera_nr in range(36):
+            camera = "{:03d}".format(camera_nr)
             print("start with camera " + camera)
             profile.cam = camera
             render(profile)
