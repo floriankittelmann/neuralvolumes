@@ -93,6 +93,7 @@ if __name__ == "__main__":
             profile.cam = camera
             render(profile)
     else:
+        print(args.cam)
         profile.cam = args.cam
         dataloader = DataLoader(dataset, batch_size=batch_size_training, shuffle=False, drop_last=True,
                                 num_workers=nof_workers)
