@@ -16,7 +16,8 @@ def get_dataset(camerafilter=lambda x: True, maxframes=-1, subsampletype=None):
         imagemean=100.,
         imagestd=25.,
         subsampletype=subsampletype,
-        subsamplesize=128
+        subsamplesize=128,
+        scale_factor=2.0
     )
 
 
