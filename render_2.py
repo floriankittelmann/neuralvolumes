@@ -24,16 +24,21 @@ def parse_arguments():
     return args, parsed
 
 
-def render(profile):
-    dataset = profile.get_dataset()
-    ae = profile.get_autoencoder(dataset)
-    torch.cuda.set_device(args.devices[0])
-    ae = torch.nn.DataParallel(ae, device_ids=args.devices).to("cuda").eval()
+def render(profile_local, args_local):
+    nof_workers = args_local.nofworkers
+    batch_size_training = profile_local.batchsize
+    if is_local_env():
+        nof_workers = 1
+        batch_size_training = 3
+    dataset = profile_local.get_dataset()
+    ae = profile_local.get_autoencoder(dataset)
+    torch.cuda.set_device(args_local.devices[0])
+    ae = torch.nn.DataParallel(ae, device_ids=args_local.devices).to("cuda").eval()
     # load
-    ae.module.load_state_dict(torch.load("{}/aeparams.pt".format(outpath), map_location=torch.device('cuda', args.devices[0])), strict=False)
+    ae.module.load_state_dict(torch.load("{}/aeparams.pt".format(outpath), map_location=torch.device('cuda', args_local.devices[0])), strict=False)
 
     dataloader_render = DataLoader(dataset, batch_size=batch_size_training, shuffle=False, drop_last=True, num_workers=nof_workers)
-    render_writer = profile.get_writer()
+    render_writer = profile_local.get_writer()
 
     iternum = 0
     itemnum = 0
@@ -43,7 +48,7 @@ def render(profile):
         for data in dataloader_render:
             b = next(iter(data.values())).size(0)
             # forward
-            output = ae(iternum, [], **{k: x.to("cuda") for k, x in data.items()}, **profile.get_ae_args())
+            output = ae(iternum, [], **{k: x.to("cuda") for k, x in data.items()}, **profile_local.get_ae_args())
 
             render_writer.batch(iternum, itemnum + torch.arange(b), **data, **output)
 
@@ -59,13 +64,13 @@ def render(profile):
 
 
 if __name__ == "__main__":
-    args, parsed = parse_arguments()
-    outpath = os.path.dirname(args.experconfig)
+    args_glob, parsed = parse_arguments()
+    outpath = os.path.dirname(args_glob.experconfig)
     print(" ".join(sys.argv))
     print("Output path:", outpath)
 
     print("----- Evaluate on following devices -----")
-    for device_id in args.devices:
+    for device_id in args_glob.devices:
         print("GPU Device with ID {}".format(device_id))
         device = torch.cuda.get_device_properties(device_id)
         print("GPU Properties: {}, Memory: {} MB, ProzessorCount: {}".format(
@@ -73,24 +78,17 @@ if __name__ == "__main__":
             (device.total_memory / (2 * 1024)),
             device.multi_processor_count))
 
-    experconfig = import_module(args.experconfig, "config")
-    profile = getattr(experconfig, args.profile)(**{k: v for k, v in vars(args).items() if k not in parsed})
-    nof_workers = args.nofworkers
-    batch_size_training = profile.batchsize
-    if is_local_env():
-        nof_workers = 1
-        batch_size_training = 3
-
-
+    experconfig = import_module(args_glob.experconfig, "config")
+    profile_glob = getattr(experconfig, args_glob.profile)(**{k: v for k, v in vars(args_glob).items() if k not in parsed})
     # eval
     if args.cam == "all":
         for camera_nr in range(36):
             camera = "{:03d}".format(camera_nr)
             print("start with camera " + camera)
-            profile.cam = camera
-            render(profile)
+            profile_glob.cam = camera
+            render(profile_glob, args_glob)
     else:
-        print(args.cam)
-        profile.cam = args.cam
-        print(profile.cam)
-        render(profile)
+        print(args_glob.cam)
+        profile_glob.cam = args_glob.cam
+        print(profile_glob.cam)
+        render(profile_glob, args_glob)
