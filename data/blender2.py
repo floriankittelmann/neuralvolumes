@@ -42,7 +42,7 @@ class Dataset(torch.utils.data.Dataset):
 
             # the focal length does not needed to normalize because it is given in px
             self.focal[camera_str] = np.array([camera.get_focal_length(), camera.get_focal_length()])
-            self.princpt[camera_str] = np.array(camera.get_principt())
+            self.princpt[camera_str] = np.array([camera.get_principt_height(), camera.get_principt_width()])
 
         self.cameras = list(filter(camerafilter, self.allcameras))
         self.framelist = framelist
