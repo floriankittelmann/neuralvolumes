@@ -18,7 +18,7 @@ from PIL import Image
 def writeimage(x):
     randid, itemnum, imgout, outpath = x
 
-    imgout = np.clip(np.clip(imgout / 255., 0., 255.) ** (1. / 1.) * 255., 0., 255).astype(np.uint8)
+    imgout = np.clip(np.clip(imgout / 255., 0., 255.) ** (2. / 1.) * 255., 0., 255).astype(np.uint8)
 
     if imgout.shape[1] % 2 != 0:
         imgout = imgout[:, :-1]
@@ -61,15 +61,21 @@ class Writer():
 
         # concatenate ground truth image
         if self.showtarget and image is not None:
+            print("shows target")
             image = image.data.to("cpu").numpy().transpose((0, 2, 3, 1))
             image = image * self.colcorrect[None, None, None, :]
             imgout = np.concatenate((imgout, image), axis=2)
+        else:
+            print("NOT showing target")
 
         # concatenate difference image
         if self.showdiff and imagediff is not None:
+            print("shows diff")
             irgbsqerr = np.mean(irgbsqerr.data.to("cpu").numpy(), axis=1)
             irgbsqerr = (cm.magma(4. * irgbsqerr / 255.)[:, :, :, :3] * 255.)
             imgout = np.concatenate((imgout, irgbsqerr), axis=2)
+        else:
+            print("NOT showing diff")
 
         outpath_img_folder = self.outpath_img_folder
         self.writepool.map(writeimage,
