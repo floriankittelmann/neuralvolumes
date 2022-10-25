@@ -100,6 +100,9 @@ class Render():
         self.viewtemplate = viewtemplate
         self.batchsize = 16
 
+    def set_cam(self, cam: str):
+        self.cam = cam
+
     def get_autoencoder(self, dataset):
         return get_autoencoder(dataset)
 
