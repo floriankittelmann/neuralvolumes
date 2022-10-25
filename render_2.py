@@ -88,7 +88,5 @@ if __name__ == "__main__":
             profile_glob.cam = camera
             render(profile_glob, args_glob)
     else:
-        print(args_glob.cam)
         profile_glob.cam = args_glob.cam
-        print(profile_glob.cam)
         render(profile_glob, args_glob)
