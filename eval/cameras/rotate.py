@@ -18,7 +18,7 @@ class Dataset(torch.utils.data.Dataset):
         self.width, self.height = self.camera.get_img_width(), self.camera.get_img_height() + 1
 
         self.focal = np.array([self.camera.get_focal_length(), self.camera.get_focal_length()], dtype=np.float32)
-        self.princpt = np.array(self.camera.get_principt(), dtype=np.float32)
+        self.princpt = np.array([self.camera.get_principt()[1], self.camera.get_principt()[0]], dtype=np.float32)
 
     def __len__(self):
         return self.length
@@ -30,7 +30,7 @@ class Dataset(torch.utils.data.Dataset):
         return {"rotate": {
             "focal": self.focal,
             "princpt": self.princpt,
-            "size": np.array([self.height, self.width])}}
+            "size": np.array([self.width, self.height])}}
 
     def __getitem__(self, idx):
         # t = (np.cos(idx * 2. * np.pi / self.period) * 0.5 + 0.5)
