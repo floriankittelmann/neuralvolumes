@@ -7,6 +7,7 @@
 import numpy as np
 
 import torch.utils.data
+from data.blender2_utils import CameraInSetup
 
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, length, period=128):
@@ -30,22 +31,23 @@ class Dataset(torch.utils.data.Dataset):
                 "size": np.array([self.width, self.height])}}
 
     def __getitem__(self, idx):
-        t = (np.cos(idx * 2. * np.pi / self.period) * 0.5 + 0.5)
-        x = np.cos(t * 0.5 * np.pi + 0.25 * np.pi) * 3.5
-        y = np.sin(t * 0.5 * np.pi + 0.25 * np.pi) * 3.5
-        z = 0.5
+        #t = (np.cos(idx * 2. * np.pi / self.period) * 0.5 + 0.5)
+        camera = CameraInSetup(1)
+        x = camera.get_x()
+        y = camera.get_y()
+        z = camera.get_z()
         campos = np.array([x, y, z], dtype=np.float32)
 
-        lookat = np.array([0., 0., 0.], dtype=np.float32)
+        """lookat = np.array([0., 0., 0.], dtype=np.float32)
         up = np.array([0., 0., 1.], dtype=np.float32)
         forward = lookat - campos
         forward /= np.linalg.norm(forward)
         right = np.cross(up, forward)
         right /= np.linalg.norm(right)
         up = np.cross(forward, right)
-        up /= np.linalg.norm(up)
+        up /= np.linalg.norm(up)"""
 
-        camrot = np.array([right, up, forward], dtype=np.float32)
+        camrot = camera.get_cam_rot_matrix_training()
 
         px, py = np.meshgrid(np.arange(self.width).astype(np.float32), np.arange(self.height).astype(np.float32))
         pixelcoords = np.stack((px, py), axis=-1)
