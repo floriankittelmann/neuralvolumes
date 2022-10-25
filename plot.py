@@ -77,13 +77,13 @@ if __name__ == "__main__":
     #example_plot()
     #my_example()
     fig = plt.figure()
-    X, Y, Z = np.mgrid[-1:1:(2.0 / 32), -1:1:(2.0 / 32), -1:1:(2.0 / 32)]
+    X, Y, Z = np.mgrid[-1:1:(2.0 / 128), -1:1:(2.0 / 128), -1:1:(2.0 / 128)]
     neuralVolumes = np.load("batch_0.npy")
     first_frame = neuralVolumes[0, :, :, :, :]
     #print(np.max(first_frame))
     first_frame = first_frame.reshape((128 * 128 * 128, 4)) / 255.0
     #print(first_frame.shape)
-    first_frame = np.resize(first_frame, (32*32*32, 4))
+    first_frame = first_frame.clip(max=1.0, min=0.0)
     #print(first_frame.shape)
     print(np.where(first_frame > 1.0)[0].size)
     #print(first_frame[34])

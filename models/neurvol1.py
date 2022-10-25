@@ -91,11 +91,7 @@ class Autoencoder(nn.Module):
             valid = torch.prod(torch.gt(raypos, -1.0) * torch.lt(raypos, 1.0), dim=-1).byte()
             validf = valid.float()
             sample_rgb, sample_alpha = self.volsampler(raypos[:, None, :, :, :], **decout, viewtemplate=viewtemplate)
-            print(sample_rgb.size())
-            print(sample_alpha.size())
-            print(raypos.size())
-            print(raypos[:, None, :, :, :].size())
-            exit()
+
             with torch.no_grad():
                 step = self.dt * torch.exp(self.stepjitter * torch.randn_like(t))
                 done = done | ((t + step) >= tmax)
