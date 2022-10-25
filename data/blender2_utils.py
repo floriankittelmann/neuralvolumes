@@ -84,7 +84,7 @@ class CameraInSetup:
         return focal_length_ld_pixels
 
     def get_principt(self):
-        return [self.get_img_width() * 0.5, self.get_img_height() * 0.5]
+        return [self.get_img_height() * 0.5, self.get_img_width() * 0.5]
 
     def get_img_height(self) -> int:
         return 667
