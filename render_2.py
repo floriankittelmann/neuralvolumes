@@ -81,7 +81,7 @@ if __name__ == "__main__":
     experconfig = import_module(args_glob.experconfig, "config")
     profile_glob = getattr(experconfig, args_glob.profile)(**{k: v for k, v in vars(args_glob).items() if k not in parsed})
     # eval
-    if args.cam == "all":
+    if args_glob.cam == "all":
         for camera_nr in range(36):
             camera = "{:03d}".format(camera_nr)
             print("start with camera " + camera)
