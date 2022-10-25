@@ -34,7 +34,7 @@ class Dataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         # t = (np.cos(idx * 2. * np.pi / self.period) * 0.5 + 0.5)
-        campos = self.camera.get_cam_pos_training()
+        campos = self.camera.get_cam_pos_training().astype(np.float32)
 
         """lookat = np.array([0., 0., 0.], dtype=np.float32)
         up = np.array([0., 0., 1.], dtype=np.float32)
@@ -45,7 +45,7 @@ class Dataset(torch.utils.data.Dataset):
         up = np.cross(forward, right)
         up /= np.linalg.norm(up)"""
 
-        camrot = self.camera.get_cam_rot_matrix_training()
+        camrot = self.camera.get_cam_rot_matrix_training().astype(np.float32)
 
         px, py = np.meshgrid(np.arange(self.width).astype(np.float32), np.arange(self.height).astype(np.float32))
         pixelcoords = np.stack((px, py), axis=-1)
