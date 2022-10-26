@@ -95,6 +95,12 @@ class Dataset(torch.utils.data.Dataset):
     def known_background(self):
         return "bg" in self.keyfilter
 
+    def get_pos_of_cam(self, cam):
+        return np.dot(self.transf[:3, :3].T, self.campos[cam] - self.transf[:3, 3])
+
+    def get_rot_of_cam(self, cam):
+        return np.dot(self.transf[:3, :3].T, self.camrot[cam].T).T
+
     def get_background(self, bg):
         if "bg" in self.keyfilter:
             for i, cam in enumerate(self.cameras):

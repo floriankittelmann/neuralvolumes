@@ -35,7 +35,7 @@ class CameraInSetup:
 
     def get_z(self) -> float:
         phi = self.phi
-        return self.radius * math.cos(phi) + 0.8
+        return self.radius * math.cos(phi) - 0.2
 
     def get_x_rotation_blender_degrees(self) -> float:
         return self.phi_degrees
