@@ -99,9 +99,6 @@ class CameraSetupPlotter:
         Z = raypos_np[:, :, :, 2].reshape(reshape_size)
         self.ax.plot_surface(X, Y, Z, color="red")
 
-
-
-
     def plot_camera_setup(self):
         self.__plot_location_neural_volumes()
         for i in range(self.nof_cameras):
