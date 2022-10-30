@@ -18,3 +18,4 @@ dependencies:
   - pymeshfix
   - wandb
   - cudnn
+  - pylint

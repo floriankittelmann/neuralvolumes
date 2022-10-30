@@ -54,7 +54,7 @@ if __name__ == "__main__":
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batchsize, shuffle=False, num_workers=1)
 
     # data writer
-    writer = profile.get_writer()
+    #writer = profile.get_writer()
 
     # build autoencoder
     ae = profile.get_autoencoder(dataset)
@@ -79,8 +79,8 @@ if __name__ == "__main__":
 
             # forward
             output = ae(iternum, [], **{k: x.to("cuda") for k, x in data.items()}, **profile.get_ae_args())
-
-            writer.batch(iternum, itemnum + torch.arange(b), **data, **output)
+            exit()
+            #writer.batch(iternum, itemnum + torch.arange(b), **data, **output)
 
             endtime = time.time()
             ips = 1. / (endtime - starttime)
@@ -91,4 +91,4 @@ if __name__ == "__main__":
             itemnum += b
 
     # cleanup
-    writer.finalize()
+    #writer.finalize()

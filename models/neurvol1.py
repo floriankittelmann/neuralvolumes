@@ -7,6 +7,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from models.RayMarchingHelper import RayMarchingHelper
 
 class Autoencoder(nn.Module):
     def __init__(self, dataset, encoder, decoder, volsampler, colorcal, dt, stepjitter=0.01, estimatebg=False):
@@ -56,53 +57,8 @@ class Autoencoder(nn.Module):
         result["losses"].update(decout["losses"])
         result["decout"] = decout
 
-        # NHWC
-        raydir = (pixelcoords - princpt[:, None, None, :]) / focal[:, None, None, :]
-        raydir = torch.cat([raydir, torch.ones_like(raydir[:, :, :, 0:1])], dim=-1)
-        raydir = torch.sum(camrot[:, None, None, :, :] * raydir[:, :, :, :, None], dim=-2)
-        raydir = raydir / torch.sqrt(torch.sum(raydir ** 2, dim=-1, keepdim=True))
-
-        # compute raymarching starting points
-        with torch.no_grad():
-            t1 = (-1.0 - campos[:, None, None, :]) / raydir
-            t2 = ( 1.0 - campos[:, None, None, :]) / raydir
-            tmin = torch.max(torch.min(t1[..., 0], t2[..., 0]),
-                   torch.max(torch.min(t1[..., 1], t2[..., 1]),
-                             torch.min(t1[..., 2], t2[..., 2])))
-            tmax = torch.min(torch.max(t1[..., 0], t2[..., 0]),
-                   torch.min(torch.max(t1[..., 1], t2[..., 1]),
-                             torch.max(t1[..., 2], t2[..., 2])))
-
-            intersections = tmin < tmax
-            t = torch.where(intersections, tmin, torch.zeros_like(tmin)).clamp(min=0.)
-            tmin = torch.where(intersections, tmin, torch.zeros_like(tmin))
-            tmax = torch.where(intersections, tmax, torch.zeros_like(tmin))
-
-        # random starting point
-        t = t - self.dt * torch.rand_like(t)
-
-        raypos = campos[:, None, None, :] + raydir * t[..., None] # NHWC
-        rayrgb = torch.zeros_like(raypos.permute(0, 3, 1, 2)) # NCHW
-        rayalpha = torch.zeros_like(rayrgb[:, 0:1, :, :]) # NCHW
-
-        # raymarch
-        done = torch.zeros_like(t).bool()
-        while not done.all():
-            valid = torch.prod(torch.gt(raypos, -1.0) * torch.lt(raypos, 1.0), dim=-1).byte()
-            validf = valid.float()
-            sample_rgb, sample_alpha = self.volsampler(raypos[:, None, :, :, :], **decout, viewtemplate=viewtemplate)
-
-            with torch.no_grad():
-                step = self.dt * torch.exp(self.stepjitter * torch.randn_like(t))
-                done = done | ((t + step) >= tmax)
-
-            contrib = ((rayalpha + sample_alpha[:, :, 0, :, :] * step[:, None, :, :]).clamp(max=1.) - rayalpha) * validf[:, None, :, :]
-
-            rayrgb = rayrgb + sample_rgb[:, :, 0, :, :] * contrib
-            rayalpha = rayalpha + contrib
-
-            raypos = raypos + raydir * step[:, :, :, None]
-            t = t + step
+        ray_helper = RayMarchingHelper(pixelcoords, princpt, focal, camrot, campos, self.dt)
+        rayrgb, rayalpha = ray_helper.do_raymarching(self.volsampler, decout, viewtemplate, self.stepjitter)
 
         if image is not None:
             imagesize = torch.tensor(image.size()[3:1:-1], dtype=torch.float32, device=pixelcoords.device)

@@ -68,7 +68,7 @@ class Dataset(torch.utils.data.Dataset):
                 except:
                     pass
 
-    def get_krt(self):
+    def get_krt(self) -> dict:
         return {k: {
             "pos": self.campos[k],
             "rot": self.camrot[k],
@@ -77,22 +77,25 @@ class Dataset(torch.utils.data.Dataset):
             "size": np.array([self.height, self.width])}
             for k in self.cameras}
 
-    def get_allcameras(self):
+    def get_allcameras(self) -> list:
         return self.allcameras
 
-    def known_background(self):
+    def get_nof_frames(self) -> int:
+        return len(self.framelist)
+
+    def known_background(self) -> bool:
         return "bg" in self.keyfilter
 
-    def get_background(self, bg):
+    def get_background(self, bg) -> None:
         if "bg" in self.keyfilter:
             for i, cam in enumerate(self.cameras):
                 if cam in self.bg:
                     bg[cam].data[:] = torch.from_numpy(self.bg[cam]).to("cuda")
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.framecamlist)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> dict:
         frame, cam = self.framecamlist[idx]
         result = {}
         validinput = True
