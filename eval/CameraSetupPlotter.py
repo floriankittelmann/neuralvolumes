@@ -8,7 +8,6 @@ from scipy.spatial.transform import Rotation
 from models.RayMarchingHelper import RayMarchingHelper
 from torch.utils.data import Sampler
 import torch
-import numpy as np
 import copy
 
 class CustomBatchSampler(Sampler[int]):
@@ -42,10 +41,16 @@ class CameraSetupPlotter:
             raise Exception("mode not known")
         self.krt = self.ds.get_krt()
         self.mode = mode
-        fig = plt.figure()
-        self.ax = fig.add_subplot(projection='3d')
+        self.__init_plot()
         self.nof_cameras = len(self.ds.get_allcameras())
         self.nof_frames = self.ds.get_nof_frames()
+
+    def __init_plot(self):
+        fig = plt.figure()
+        self.ax = fig.add_subplot(111, projection='3d')
+        self.ax.set_xlim(-5, 5)
+        self.ax.set_ylim(-5, 5)
+        self.ax.set_zlim(-5, 5)
 
     def __plot_location_neural_volumes(self):
         cube = CubePlotter()
@@ -54,14 +59,12 @@ class CameraSetupPlotter:
     def __plot_coordinate_system_from_cam_index(self, i):
         cam_key = list(self.krt.keys())[i]
         values_krt = self.krt[cam_key]
-
         if self.mode == self.MODE_DRYICE_DATASET:
             rot_krt = self.ds.get_rot_of_cam(cam_key)
             pos_krt = self.ds.get_pos_of_cam(cam_key)
         else:
             rot_krt = values_krt["rot"]
             pos_krt = values_krt["pos"]
-
         rot_cam = Rotation.from_matrix(rot_krt)
         cs_cam = CoordinateSystem(pos_krt[0], pos_krt[1], pos_krt[2], rot_cam, arrow_length=self.arrow_length)
         cs_cam.draw(self.ax)
@@ -83,11 +86,8 @@ class CameraSetupPlotter:
         ray_helper = RayMarchingHelper(pixelcoords, princpt, focal, camrot, campos, dt)
         for raypos in ray_helper.iterate_raypos(1):
             self.__plot_raypos(raypos)
-        self.ax.set_xlim(-5, 5)
-        self.ax.set_ylim(-5, 5)
-        self.ax.set_zlim(-5, 5)
         plt.show()
-        exit()
+        self.__init_plot()
 
     def __plot_raypos(self, raypos: torch.Tensor):
         raypos_np = copy.deepcopy(raypos.numpy())
@@ -100,8 +100,8 @@ class CameraSetupPlotter:
         self.ax.plot_surface(X, Y, Z, color="red")
 
     def plot_camera_setup(self):
-        self.__plot_location_neural_volumes()
         for i in range(self.nof_cameras):
+            self.__plot_location_neural_volumes()
             self.__plot_coordinate_system_from_cam_index(i)
             self.__plot_ray_marching_positions_from_cam_index(i)
 
