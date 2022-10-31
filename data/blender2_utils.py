@@ -62,16 +62,7 @@ class CameraInSetup:
             [0, 1, 0],
             [-math.sin(rad_rot), 0, math.cos(rad_rot)],
         ])
-        final_matrix = extrinsic_matrix.dot(y_rot_matrix)
-
-        rad_rot = -90.0 / 360.0 * 2 * math.pi
-        z_rot_matrix = np.asarray([
-            [math.cos(rad_rot), -math.sin(rad_rot), 0],
-            [math.sin(rad_rot), math.cos(rad_rot), 0],
-            [0, 0, 1],
-        ])
-        final_matrix = final_matrix.dot(z_rot_matrix)
-        return final_matrix.astype(np.float32)
+        return extrinsic_matrix.dot(y_rot_matrix).astype(np.float32)
 
     def get_focal_length(self):
         focal_length_blender = 40.0
