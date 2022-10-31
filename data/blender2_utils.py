@@ -6,7 +6,7 @@ from scipy.spatial.transform import Rotation as R
 
 class CameraInSetup:
     def __init__(self, camera_nr: int):
-        self.radius = 3.5 # in meters
+        self.radius = 3.5  # in meters
         self.phi_degrees = self.get_phi_degrees_from_cam_nr(camera_nr)
         self.theta_degrees = self.get_theta_degrees_from_cam_nr(camera_nr)
         self.theta = self.theta_degrees / 360.0 * 2 * math.pi
@@ -67,9 +67,12 @@ class CameraInSetup:
     def get_focal_length(self):
         focal_length_blender = 40.0
         sensor_width_longer_distance_blender = 36.0
-        sensor_width_shorter_distance_blender = sensor_width_longer_distance_blender / float(self.get_img_width()) * float(self.get_img_height())
-        focal_length_ld_pixels = focal_length_blender / sensor_width_longer_distance_blender * float(self.get_img_width())
-        focal_length_sd_pixels = focal_length_blender / sensor_width_shorter_distance_blender * float(self.get_img_height())
+        sensor_width_shorter_distance_blender = sensor_width_longer_distance_blender / float(
+            self.get_img_width()) * float(self.get_img_height())
+        focal_length_ld_pixels = focal_length_blender / sensor_width_longer_distance_blender * float(
+            self.get_img_width())
+        focal_length_sd_pixels = focal_length_blender / sensor_width_shorter_distance_blender * float(
+            self.get_img_height())
         if focal_length_ld_pixels != focal_length_sd_pixels:
             raise Exception("they should be the same")
         return focal_length_ld_pixels
@@ -104,4 +107,3 @@ if __name__ == "__main__":
         print("--- neural volumes ----")
         print(camera.get_cam_pos_training())
         print(R.from_matrix(camera.get_cam_rot_matrix_training()).as_quat())
-
