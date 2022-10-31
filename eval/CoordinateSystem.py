@@ -4,16 +4,20 @@ from eval.Arrow3D import Arrow3D
 
 
 class CoordinateSystem:
+
+    COLOR_X_AXIS = "r"
+    COLOR_Y_AXIS = "g"
+    COLOR_Z_AXIS = "b"
+
     def __init__(
             self,
             pos_x: float,
             pos_y: float,
             pos_z: float,
-            rot: Rotation,
-            arrow_length: float = 0.4,
-            linewidth: float = 1.5
+            rot: Rotation
     ):
-        self.line_width = linewidth
+        self.line_width = 2.5
+        arrow_length = 0.8
 
         x_end_point = np.array([arrow_length, 0.0, 0.0])
         y_end_point = np.array([0.0, arrow_length, 0.0])
@@ -39,23 +43,23 @@ class CoordinateSystem:
 
     def __draw_arrow(self, mode: str, axis_local):
         if mode == "x":
-            color = "r"
+            color = self.COLOR_X_AXIS
             xs = self.norm_x[0]
             ys = self.norm_x[1]
             zs = self.norm_x[2]
         elif mode == "y":
-            color = "g"
+            color = self.COLOR_Y_AXIS
             xs = self.norm_y[0]
             ys = self.norm_y[1]
             zs = self.norm_y[2]
         elif mode == "z":
-            color = "b"
+            color = self.COLOR_Z_AXIS
             xs = self.norm_z[0]
             ys = self.norm_z[1]
             zs = self.norm_z[2]
         else:
             raise Exception("not defined color")
-        format = dict(mutation_scale=20, arrowstyle='-|>', color=color, shrinkA=0, shrinkB=0, linewidth=self.line_width)
+        format = dict(arrowstyle='-|>', color=color, shrinkA=0, shrinkB=0, linewidth=self.line_width)
         arrow = Arrow3D(xs, ys, zs, **format)
         axis_local.add_artist(arrow)
 

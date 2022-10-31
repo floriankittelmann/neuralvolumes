@@ -17,7 +17,7 @@ class RayMarchingHelper:
         # Adds z-axis and fills z-axis with values of 1.0
         raydir = torch.cat([raydir, torch.ones_like(raydir[:, :, :, 0:1])], dim=-1)
 
-        # apply rotation of the raydir according to camrot
+        # apply rotation of the raydir according to camrot - it is a transposed rotation matrix
         rotation = camrot[:, None, None, :, :] * raydir[:, :, :, :, None]
 
         # reduces one axis which was added. why there was added an additional axis?
@@ -52,11 +52,6 @@ class RayMarchingHelper:
         self.t = t - self.dt * torch.rand_like(t)
 
         self.raypos = self.campos[:, None, None, :] + self.raydir * self.t[..., None]  # NHWC
-        """ic(self.raypos)
-        ic(self.campos[:, None, None, :])
-        ic(self.raydir)
-        ic(self.t[..., None])"""
-        #exit()
 
     def do_raymarching(self, volsampler, decout, viewtemplate, stepjitter):
         rayrgb = torch.zeros_like(self.raypos.permute(0, 3, 1, 2))  # NCHW
