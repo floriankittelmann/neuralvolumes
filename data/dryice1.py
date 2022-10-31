@@ -119,7 +119,7 @@ class Dataset(torch.utils.data.Dataset):
         result = {}
 
         validinput = True
-
+        result["cam"] = cam
         # fixed camera images
         if "fixedcamimage" in self.keyfilter:
             ninput = len(self.fixedcameras)

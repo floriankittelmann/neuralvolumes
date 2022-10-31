@@ -99,7 +99,7 @@ class Dataset(torch.utils.data.Dataset):
         frame, cam = self.framecamlist[idx]
         result = {}
         validinput = True
-
+        result["cam"] = cam
         if "fixedcamimage" in self.keyfilter:
 
             ninput = len(self.fixedcameras)

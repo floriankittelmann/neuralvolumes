@@ -1,21 +1,41 @@
 from collections.abc import Iterator
 import torch
-
+from icecream import ic
 
 class RayMarchingHelper:
 
     def __init__(self, pixelcoords, princpt, focal, camrot, campos, dt):
+        """
+            pixelcoords: coordinates x,y of pixels -> example: image width 1024x667
+                -> axis x: values from 0.0 - 1023.0, axis y: values from 0.0 - 666.0
+        """
         # NHWC
-        raydir = (pixelcoords - princpt[:, None, None, :]) / focal[:, None, None, :]
-        raydir = torch.cat([raydir, torch.ones_like(raydir[:, :, :, 0:1])], dim=-1)
-        raydir = torch.sum(camrot[:, None, None, :, :] * raydir[:, :, :, :, None], dim=-2)
-        self.raydir = raydir / torch.sqrt(torch.sum(raydir ** 2, dim=-1, keepdim=True))
-        self.dt = dt
 
+        # Calculates ratio between image width and sensor width (unit doesn't matter because is a ratio)
+        raydir = (pixelcoords - princpt[:, None, None, :]) / focal[:, None, None, :]
+
+        # Adds z-axis and fills z-axis with values of 1.0
+        raydir = torch.cat([raydir, torch.ones_like(raydir[:, :, :, 0:1])], dim=-1)
+
+        # apply rotation of the raydir according to camrot
+        rotation = camrot[:, None, None, :, :] * raydir[:, :, :, :, None]
+
+        # reduces one axis which was added. why there was added an additional axis?
+        raydir = torch.sum(rotation, dim=-2)
+
+        # normalisation of the beam direction
+        raydir = raydir / torch.sqrt(torch.sum(raydir ** 2, dim=-1, keepdim=True))
+
+        self.raydir = raydir
+        self.dt = dt
+        self.campos = campos
+        self.__calculate_starting_points()
+
+    def __calculate_starting_points(self):
         # compute raymarching starting points
         with torch.no_grad():
-            t1 = (-1.0 - campos[:, None, None, :]) / self.raydir
-            t2 = (1.0 - campos[:, None, None, :]) / self.raydir
+            t1 = (-1.0 - self.campos[:, None, None, :]) / self.raydir
+            t2 = (1.0 - self.campos[:, None, None, :]) / self.raydir
             tmin = torch.max(torch.min(t1[..., 0], t2[..., 0]),
                              torch.max(torch.min(t1[..., 1], t2[..., 1]),
                                        torch.min(t1[..., 2], t2[..., 2])))
@@ -24,14 +44,19 @@ class RayMarchingHelper:
                                        torch.max(t1[..., 2], t2[..., 2])))
 
             intersections = tmin < tmax
-            self.t = torch.where(intersections, tmin, torch.zeros_like(tmin)).clamp(min=0.)
+            t = torch.where(intersections, tmin, torch.zeros_like(tmin)).clamp(min=0.)
             tmin = torch.where(intersections, tmin, torch.zeros_like(tmin))
             self.tmax = torch.where(intersections, tmax, torch.zeros_like(tmin))
 
         # random starting point
-        self.t = self.t - dt * torch.rand_like(self.t)
+        self.t = t - self.dt * torch.rand_like(t)
 
-        self.raypos = campos[:, None, None, :] + self.raydir * self.t[..., None]  # NHWC
+        self.raypos = self.campos[:, None, None, :] + self.raydir * self.t[..., None]  # NHWC
+        """ic(self.raypos)
+        ic(self.campos[:, None, None, :])
+        ic(self.raydir)
+        ic(self.t[..., None])"""
+        #exit()
 
     def do_raymarching(self, volsampler, decout, viewtemplate, stepjitter):
         rayrgb = torch.zeros_like(self.raypos.permute(0, 3, 1, 2))  # NCHW

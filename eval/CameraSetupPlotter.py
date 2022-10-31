@@ -9,6 +9,7 @@ from models.RayMarchingHelper import RayMarchingHelper
 from torch.utils.data import Sampler
 import torch
 import copy
+from icecream import ic
 
 class CustomBatchSampler(Sampler[int]):
 
@@ -57,7 +58,9 @@ class CameraSetupPlotter:
         cube.draw(self.ax)
 
     def __plot_coordinate_system_from_cam_index(self, i):
+        print("-- plot coordinate system")
         cam_key = list(self.krt.keys())[i]
+        ic(cam_key)
         values_krt = self.krt[cam_key]
         if self.mode == self.MODE_DRYICE_DATASET:
             rot_krt = self.ds.get_rot_of_cam(cam_key)
@@ -70,8 +73,10 @@ class CameraSetupPlotter:
         cs_cam.draw(self.ax)
 
     def __plot_ray_marching_positions_from_cam_index(self, i):
-        datasetindex = i * self.nof_frames
+        print("------ raymarching----- ")
+        datasetindex = i
         dataset_of_camera = self.ds[datasetindex]
+        ic(dataset_of_camera["cam"])
         pixelcoords = dataset_of_camera['pixelcoords']
         princpt = dataset_of_camera['princpt']
         focal = dataset_of_camera['focal']
@@ -82,6 +87,7 @@ class CameraSetupPlotter:
         focal = torch.from_numpy(focal.reshape((1, 2)))
         camrot = torch.from_numpy(camrot.reshape((1, 3, 3)))
         campos = torch.from_numpy(campos.reshape((1, 3)))
+        ic(campos)
         dt = 2.0
         ray_helper = RayMarchingHelper(pixelcoords, princpt, focal, camrot, campos, dt)
         for raypos in ray_helper.iterate_raypos(1):
@@ -100,6 +106,7 @@ class CameraSetupPlotter:
         self.ax.plot_surface(X, Y, Z, color="red")
 
     def plot_camera_setup(self):
+        #i = 1
         for i in range(self.nof_cameras):
             self.__plot_location_neural_volumes()
             self.__plot_coordinate_system_from_cam_index(i)
