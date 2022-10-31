@@ -16,8 +16,7 @@ def get_dataset(camerafilter=lambda x: True, maxframes=-1, subsampletype=None):
         imagemean=100.,
         imagestd=25.,
         subsampletype=subsampletype,
-        subsamplesize=128,
-        scale_factor=0.73
+        subsamplesize=128
     )
 
 
@@ -30,7 +29,7 @@ def get_autoencoder(dataset):
     return aemodel.Autoencoder(
         dataset,
         encoderlib.Encoder(3),
-        decoderlib.Decoder(globalwarp=True, warptype="affinemix", viewconditioned=False),
+        decoderlib.Decoder(globalwarp=False, warptype=None, viewconditioned=False),
         volsamplerlib.VolSampler(),
         colorcalib.Colorcal(dataset.get_allcameras()),
         4. / 256)

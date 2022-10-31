@@ -1,5 +1,5 @@
+import numpy as np
 from eval.CoordinateSystem import CoordinateSystem
-from eval.GlobalCoordinateSystem import GlobalCoordinateSystem
 from eval.CubePlotter import CubePlotter
 from config_templates.blender2_config import get_dataset as get_dataset_blender
 from config_templates.dryice1_config import get_dataset as get_dataset_dryice
@@ -25,22 +25,26 @@ class CameraSetupPlotter:
         self.mode = mode
         self.nof_cameras = len(self.ds.get_allcameras())
         self.nof_frames = self.ds.get_nof_frames()
+        self.nof_plots = 8
+        self.nof_rows = 2
+        self.nof_cols = 4
+        self.list_ax = []
+        self.current_index_plot = 0
 
-    def __init_plot(self, i: int):
+    def __init_plot(self):
+        self.list_ax = []
         fig = plt.figure()
-        cam_key = list(self.krt.keys())[i]
-        self.ax = fig.add_subplot(111, projection='3d')
-        title = "Kamera: {} - {} von {}".format(cam_key, i + 1, self.nof_cameras)
-        self.ax.title.set_text(title)
-        self.ax.set_xlim(-5, 5)
-        self.ax.set_ylim(-5, 5)
-        self.ax.set_zlim(-5, 5)
-        cs = GlobalCoordinateSystem()
-        cs.draw(self.ax)
+        for i in range(self.nof_plots):
+            ax = fig.add_subplot(self.nof_rows, self.nof_cols, i+1, projection='3d')
+            ax.set_xlim(-5, 5)
+            ax.set_ylim(-5, 5)
+            ax.set_zlim(-5, 5)
+            self.list_ax.append(ax)
+        self.current_index_plot = 0
 
     def __plot_location_neural_volumes(self):
         cube = CubePlotter()
-        cube.draw(self.ax)
+        cube.draw(self.__get_current_ax())
 
     def __plot_coordinate_system_from_cam_index(self, i):
         cam_key = list(self.krt.keys())[i]
@@ -54,7 +58,7 @@ class CameraSetupPlotter:
             pos_krt = values_krt["pos"]
         rot_cam = Rotation.from_matrix(rot_krt)
         cs_cam = CoordinateSystem(pos_krt[0], pos_krt[1], pos_krt[2], rot_cam)
-        cs_cam.draw(self.ax)
+        cs_cam.draw(self.__get_current_ax())
 
     def __plot_ray_marching_positions_from_cam_index(self, i):
         datasetindex = i
@@ -69,26 +73,53 @@ class CameraSetupPlotter:
         focal = torch.from_numpy(focal.reshape((1, 2)))
         camrot = torch.from_numpy(camrot.reshape((1, 3, 3)))
         campos = torch.from_numpy(campos.reshape((1, 3)))
-        dt = 2.0
+        dt = 0.1
         ray_helper = RayMarchingHelper(pixelcoords, princpt, focal, camrot, campos, dt)
-        for raypos in ray_helper.iterate_raypos(1):
-            self.__plot_raypos(raypos)
+        list_points_to_plot = [
+            {'x': 0, 'y': 0, 'plotX': None, 'plotY': None, 'plotZ': None},
+            {'x': 1023, 'y': 0, 'plotX': None, 'plotY': None, 'plotZ': None},
+            {'x': 0, 'y': 666, 'plotX': None, 'plotY': None, 'plotZ': None},
+            {'x': 1023, 'y': 666, 'plotX': None, 'plotY': None, 'plotZ': None},
+            {'x': int(1024 / 2), 'y': int(666 / 2), 'plotX': None, 'plotY': None, 'plotZ': None}
+        ]
+        nof_iterations = 0
+        for raypos in ray_helper.iterate_raypos():
+            raypos_np = copy.deepcopy(raypos.numpy())
+            for point in list_points_to_plot:
+                x_point = raypos_np[0, point['x'], point['y'], 0]
+                y_point = raypos_np[0, point['x'], point['y'], 1]
+                z_point = raypos_np[0, point['x'], point['y'], 2]
+                if point['plotX'] is None:
+                    point['plotX'] = np.array([x_point])
+                    point['plotY'] = np.array([y_point])
+                    point['plotZ'] = np.array([z_point])
+                else:
+                    point['plotX'] = np.append(point['plotX'], x_point)
+                    point['plotY'] = np.append(point['plotY'], y_point)
+                    point['plotZ'] = np.append(point['plotZ'], z_point)
+            nof_iterations = nof_iterations + 1
 
-    def __plot_raypos(self, raypos: torch.Tensor):
-        raypos_np = copy.deepcopy(raypos.numpy())
-        img_size_1 = raypos_np.shape[1]
-        img_size_2 = raypos_np.shape[2]
-        reshape_size = (img_size_1, img_size_2)
-        X = raypos_np[:, :, :, 0].reshape(reshape_size)
-        Y = raypos_np[:, :, :, 1].reshape(reshape_size)
-        Z = raypos_np[:, :, :, 2].reshape(reshape_size)
-        self.ax.plot_surface(X, Y, Z, color="red")
+        for point in list_points_to_plot:
+            ax = self.__get_current_ax()
+            ax.plot(point['plotX'], point['plotY'], point['plotZ'], color="red")
+
+    def __get_current_ax(self):
+        return self.list_ax[self.current_index_plot]
 
     def plot_camera_setup(self):
+        self.__init_plot()
+        self.current_index_plot = 0
         for i in range(self.nof_cameras):
-            self.__init_plot(i)
+            print("Create Plot for Camera {}".format(i))
             self.__plot_location_neural_volumes()
             self.__plot_coordinate_system_from_cam_index(i)
             self.__plot_ray_marching_positions_from_cam_index(i)
-            plt.show()
-
+            cam_key = list(self.krt.keys())[i]
+            ax = self.__get_current_ax()
+            title = "Kamera: {} - {} von {}".format(cam_key, i + 1, self.nof_cameras)
+            ax.title.set_text(title)
+            self.current_index_plot = self.current_index_plot + 1
+            if self.current_index_plot >= self.nof_plots:
+                plt.show()
+                self.__init_plot()
+        plt.show()

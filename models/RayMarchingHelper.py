@@ -73,7 +73,6 @@ class RayMarchingHelper:
             rayalpha = rayalpha + contrib
 
             self.__make_step_for_raypos(step)
-            self.t = self.t + step
         return rayrgb, rayalpha
 
     def __calculate_done(self, done, stepjitter):
@@ -84,15 +83,12 @@ class RayMarchingHelper:
 
     def __make_step_for_raypos(self, step):
         self.raypos = self.raypos + self.raydir * step[:, :, :, None]
+        self.t = self.t + step
 
-    def iterate_raypos(self, nof_max_iterations: int) -> Iterator:
+    def iterate_raypos(self) -> Iterator:
         stepjitter = 0.01
-        nof_iterations = 0
         done = torch.zeros_like(self.t).bool()
         while not done.all():
             done, step = self.__calculate_done(done, stepjitter)
             self.__make_step_for_raypos(step)
-            nof_iterations = nof_iterations + 1
             yield self.raypos
-            if nof_iterations >= nof_max_iterations:
-                done = torch.ones_like(self.t).bool()
