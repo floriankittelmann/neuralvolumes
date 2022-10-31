@@ -37,7 +37,7 @@ class Dataset(torch.utils.data.Dataset):
             self.allcameras.append(camera_str)
 
             # cameras need to be scaled because the volume is normalized to the space of [1,-1]^3
-            self.campos[camera_str] = camera.get_cam_pos_training() / scale_factor
+            self.campos[camera_str] = camera.get_cam_pos_training() * scale_factor
             self.camrot[camera_str] = camera.get_cam_rot_matrix_training()
 
             # the focal length does not needed to normalize because it is given in px
