@@ -14,9 +14,12 @@ def plot_loosing_edges(filenameMesh: str):
 
 def voxelize_surface_mesh(filenameMesh: str):
     mesh = pv.read(filenameMesh)
-    voxels = pv.voxelize(mesh, density=0.4)
+    voxels = pv.voxelize(mesh, density=0.6)
+    print(voxels.get_data_range())
     print(type(voxels))
-    print(type(voxels.points))
+    print(voxels.points.shape)
+    print(voxels.points)
+    print(voxels.compute_cell_sizes())
     voxels.plot()
 
 
@@ -24,4 +27,4 @@ if __name__ == "__main__":
     # examples.native()
     filename = "C:\\Users\\Flori\\Desktop\\BaseMesh_Anim.stl"
     plot_loosing_edges(filename)
-    #voxelize_surface_mesh(filename)
+    voxelize_surface_mesh(filename)
