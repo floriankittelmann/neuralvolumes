@@ -51,9 +51,16 @@ class CameraSetupInBlender2:
         return np.array(xyz_pos).astype(np.float32)
 
     def get_cam_rot_matrix_training(self) -> np.ndarray:
-        xyz_rot = [self.get_x_rotation_blender_degrees(),
-                   self.get_y_rotation_blender_degrees(),
-                   self.get_z_rotation_blender_degrees()]
+        return self.__get_cam_rot_autoencoder(
+            self.get_x_rotation_blender_degrees(),
+            self.get_y_rotation_blender_degrees(),
+            self.get_z_rotation_blender_degrees()
+        )
+
+    def __get_cam_rot_autoencoder(self, x_rot_degrees: float, y_rot_degrees: float, z_rot_degrees: float) -> np.ndarray:
+        xyz_rot = [x_rot_degrees,
+                   y_rot_degrees,
+                   z_rot_degrees]
         xyz_rot = R.from_euler('xyz', xyz_rot, degrees=True)
         extrinsic_matrix = np.array(xyz_rot.as_matrix()).astype(np.float32)
         rad_rot = 180.0 / 360.0 * 2 * math.pi
@@ -90,3 +97,19 @@ class CameraSetupInBlender2:
     @staticmethod
     def get_img_width() -> int:
         return 1024
+
+    def get_render_rot(self, idx):
+        nof_frames = 500.0
+        radius = self.get_radius()
+        step = 2.0 * math.pi / nof_frames
+        alpha = idx * step
+        x = math.cos(alpha) * radius
+        y = math.sin(alpha) * radius
+        z = 0.0
+        xyz_pos = [x, y, z]
+        campos = np.array(xyz_pos).astype(np.float32)
+
+        z_rot = alpha + math.pi / 2
+        z_rot_degrees = z_rot / (2.0 * math.pi) * 360.0
+        camrot = self.__get_cam_rot_autoencoder(0.0, 0.0, z_rot_degrees)
+        return campos, camrot

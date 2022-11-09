@@ -36,29 +36,7 @@ class Dataset(torch.utils.data.Dataset):
             "size": np.array([self.width, self.height])}}
 
     def __getitem__(self, idx):
-        # t = (np.cos(idx * 2. * np.pi / self.period) * 0.5 + 0.5)
-
-        nof_frames = 500.0
-        radius = self.camera.get_radius()
-        step = 2.0 * math.pi / nof_frames
-        alpha = idx * step
-        x = math.cos(alpha) * radius
-        y = math.sin(alpha) * radius
-        z = 0.0
-
-        z_rot = alpha + (90.0 / 360.0 * 2.0 * math.pi)
-        xyz_rot = [0.0, 0.0, z_rot]
-        xyz_rot = R.from_euler('xyz', xyz_rot)
-        extrinsic_matrix = np.array(xyz_rot.as_matrix()).astype(np.float32)
-        rad_rot = 180.0 / 360.0 * 2.0 * math.pi
-        y_rot_matrix = np.asarray([
-            [math.cos(rad_rot), 0, math.sin(rad_rot)],
-            [0, 1, 0],
-            [-math.sin(rad_rot), 0, math.cos(rad_rot)],
-        ])
-        camrot = extrinsic_matrix.dot(y_rot_matrix).T.astype(np.float32)
-        xyz_pos = [x, y, z]
-        campos = np.array(xyz_pos).astype(np.float32)
+        campos, camrot = self.camera.get_render_rot(idx)
 
         px, py = np.meshgrid(np.arange(self.width).astype(np.float32), np.arange(self.height).astype(np.float32))
         pixelcoords = np.stack((px, py), axis=-1)
