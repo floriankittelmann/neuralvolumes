@@ -45,7 +45,7 @@ class Dataset(torch.utils.data.Dataset):
         up = np.cross(forward, right)
         up /= np.linalg.norm(up)"""
 
-        camrot = self.camera.get_cam_rot_matrix_training().T.astype(np.float32)
+        camrot = self.camera.get_cam_rot_matrix_training().astype(np.float32)
 
         px, py = np.meshgrid(np.arange(self.width).astype(np.float32), np.arange(self.height).astype(np.float32))
         pixelcoords = np.stack((px, py), axis=-1)

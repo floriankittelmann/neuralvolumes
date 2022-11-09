@@ -62,7 +62,7 @@ class CameraSetupInBlender2:
             [0, 1, 0],
             [-math.sin(rad_rot), 0, math.cos(rad_rot)],
         ])
-        return extrinsic_matrix.dot(y_rot_matrix).astype(np.float32)
+        return extrinsic_matrix.dot(y_rot_matrix).T.astype(np.float32)
 
     def get_focal_length(self):
         focal_length_blender = 40.0

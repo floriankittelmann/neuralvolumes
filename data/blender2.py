@@ -126,7 +126,7 @@ class Dataset(torch.utils.data.Dataset):
         if cam is not None:
             if "camera" in self.keyfilter:
                 # camera data
-                result["camrot"] = self.camrot[cam].T
+                result["camrot"] = self.camrot[cam]
                 result["campos"] = self.campos[cam]
                 result["focal"] = self.focal[cam]
                 result["princpt"] = self.princpt[cam]
