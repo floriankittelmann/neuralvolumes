@@ -7,12 +7,12 @@
 import numpy as np
 
 import torch.utils.data
-from data.blender2_utils import CameraInSetup
+from data.CameraSetups.CameraSetupInBlender2 import CameraSetupInBlender2
 
 
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, length, period=128):
-        self.camera = CameraInSetup(1)
+        self.camera = CameraSetupInBlender2(1)
         self.length = length
         self.period = period
         self.width, self.height = self.camera.get_img_width(), self.camera.get_img_height() + 1
@@ -34,7 +34,7 @@ class Dataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         # t = (np.cos(idx * 2. * np.pi / self.period) * 0.5 + 0.5)
-        campos = self.camera.get_cam_pos_training().astype(np.float32) / 3.5
+        campos = self.camera.get_cam_pos_training().astype(np.float32)
 
         """lookat = np.array([0., 0., 0.], dtype=np.float32)
         up = np.array([0., 0., 1.], dtype=np.float32)

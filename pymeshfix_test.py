@@ -1,9 +1,8 @@
-
-#worth to have a look: https://github.com/NVIDIAGameWorks/kaolin
+# worth to have a look: https://github.com/NVIDIAGameWorks/kaolin
+import copy
 
 from pymeshfix import MeshFix
 import pyvista as pv
-from pyvista import PolyData
 
 
 def plot_loosing_edges(filenameMesh: str):
@@ -15,16 +14,20 @@ def plot_loosing_edges(filenameMesh: str):
 def voxelize_surface_mesh(filenameMesh: str):
     mesh = pv.read(filenameMesh)
     voxels = pv.voxelize(mesh, density=0.6)
-    print(voxels.get_data_range())
-    print(type(voxels))
-    print(voxels.points.shape)
-    print(voxels.points)
-    print(voxels.compute_cell_sizes())
-    voxels.plot()
+    pv.global_theme.background = "black"
+    pl = pv.Plotter()
+    voxel2 = copy.deepcopy(voxels)
+    voxel2.points = 10 + voxel2.points
+    pl.add_mesh(voxels, color="red", opacity=0.85)
+    pl.add_mesh(voxel2, color="green")
+    pl.show()
+    # when adding opacity, it looks like inside it is hollow. But there are voxels as well.
+    # can be checked by plotting the cell centers as spheres
+    # voxels.cell_centers().plot(render_points_as_spheres=True)
 
 
 if __name__ == "__main__":
     # examples.native()
     filename = "C:\\Users\\Flori\\Desktop\\BaseMesh_Anim.stl"
-    plot_loosing_edges(filename)
+    # plot_loosing_edges(filename)
     voxelize_surface_mesh(filename)

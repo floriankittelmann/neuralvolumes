@@ -31,6 +31,8 @@ def parse_arguments():
     parser.add_argument('--devices', type=int, nargs='+', default=[0], help='devices')
     parser.add_argument('--batchsize', type=int, default=16, help='batchsize')
     parser.add_argument('--maxframes', type=int, default=-1)
+    parser.add_argument('--local', action='store_true',
+                        help='training on local machine with small memory size and small gpu power')
     parsed, unknown = parser.parse_known_args()
     for arg in unknown:
         if arg.startswith(("-", "--")):
@@ -49,12 +51,15 @@ if __name__ == "__main__":
     experconfig = import_module(args.experconfig, "config")
     profile = getattr(experconfig, args.profile)(**{k: v for k, v in vars(args).items() if k not in parsed})
 
+    batchsize = args.batchsize
+    if args.local:
+        batchsize = 2
     # load datasets
     dataset = profile.get_dataset()
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batchsize, shuffle=False, num_workers=1)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batchsize, shuffle=False, num_workers=batchsize)
 
     # data writer
-    #writer = profile.get_writer()
+    writer = profile.get_writer(nthreads=batchsize)
 
     # build autoencoder
     ae = profile.get_autoencoder(dataset)
@@ -80,7 +85,7 @@ if __name__ == "__main__":
             # forward
             output = ae(iternum, [], **{k: x.to("cuda") for k, x in data.items()}, **profile.get_ae_args())
             exit()
-            #writer.batch(iternum, itemnum + torch.arange(b), **data, **output)
+            writer.batch(iternum, itemnum + torch.arange(b), **data, **output)
 
             endtime = time.time()
             ips = 1. / (endtime - starttime)
@@ -91,4 +96,4 @@ if __name__ == "__main__":
             itemnum += b
 
     # cleanup
-    #writer.finalize()
+    writer.finalize()

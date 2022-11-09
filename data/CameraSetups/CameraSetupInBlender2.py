@@ -4,7 +4,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 
-class CameraInSetup:
+class CameraSetupInBlender2:
     def __init__(self, camera_nr: int):
         self.radius = 3.5  # in meters
         self.phi_degrees = self.get_phi_degrees_from_cam_nr(camera_nr)
@@ -83,27 +83,10 @@ class CameraInSetup:
     def get_principt_width(self):
         return self.get_img_width() * 0.5
 
-    def get_img_height(self) -> int:
+    @staticmethod
+    def get_img_height() -> int:
         return 667
 
-    def get_img_width(self) -> int:
+    @staticmethod
+    def get_img_width() -> int:
         return 1024
-
-
-if __name__ == "__main__":
-    for i in range(0, 36):
-        print(" ")
-        print("{:3}".format(i))
-        camera = CameraInSetup(i)
-        print("--- blender ----")
-        print("X: {0:.2f}".format(camera.get_x()))
-        print("Y: {0:.2f}".format(camera.get_y()))
-        print("Z: {0:.2f}".format(camera.get_z()))
-
-        print("X Rotation: {0:.2f}".format(camera.get_x_rotation_blender_degrees()))
-        print("Y Rotation: {0:.2f}".format(camera.get_y_rotation_blender_degrees()))
-        print("Z Rotation: {0:.2f}".format(camera.get_z_rotation_blender_degrees()))
-
-        print("--- neural volumes ----")
-        print(camera.get_cam_pos_training())
-        print(R.from_matrix(camera.get_cam_rot_matrix_training()).as_quat())

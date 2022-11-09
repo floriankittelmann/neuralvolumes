@@ -91,7 +91,6 @@ class Progress():
 
 class Render():
     """Render model with training camera or from novel viewpoints.
-    
     e.g., python render.py {configpath} Render --maxframes 128"""
 
     def __init__(self, cam="rotate", maxframes=-1, showtarget=False, viewtemplate=False):
@@ -100,13 +99,10 @@ class Render():
         self.showtarget = showtarget
         self.viewtemplate = viewtemplate
         self.batchsize = 16
-
     def get_autoencoder(self, dataset):
         return get_autoencoder(dataset)
-
     def get_ae_args(self):
         return dict(outputlist=["irgbrec"], viewtemplate=self.viewtemplate)
-
     def get_dataset(self):
         import data.utils
         import eval.cameras.rotate as cameralib
@@ -116,12 +112,12 @@ class Render():
             return data.utils.JoinDataset(camdataset, dataset)
         else:
             return dataset
-
-    def get_writer(self):
+    def get_writer(self, nthreads=16):
         import eval.writers.videowriter as writerlib
         return writerlib.Writer(
             os.path.dirname(__file__),
             "render_{}{}.mp4".format("rotate" if self.cam is None else self.cam,
                                      "_template" if self.viewtemplate else ""),
-            showtarget=self.showtarget
+            showtarget=self.showtarget,
+            nthreads=nthreads
         )

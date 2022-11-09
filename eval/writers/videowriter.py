@@ -17,8 +17,8 @@ from PIL import Image
 
 def writeimage(x):
     randid, itemnum, imgout, outpath = x
-
-    imgout = np.clip(np.clip(imgout / 255., 0., 255.) ** (2. / 1.) * 255., 0., 255).astype(np.uint8)
+    gamma_correction_value = (2. / 1.)
+    imgout = np.clip(np.clip(imgout / 255., 0., 255.) ** gamma_correction_value * 255., 0., 255).astype(np.uint8)
 
     if imgout.shape[1] % 2 != 0:
         imgout = imgout[:, :-1]

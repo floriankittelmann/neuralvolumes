@@ -7,7 +7,7 @@
 import numpy as np
 from PIL import Image
 import torch.utils.data
-from data.blender2_utils import CameraInSetup
+from data.CameraSetups.CameraSetupInBlender2 import CameraSetupInBlender2
 
 
 class Dataset(torch.utils.data.Dataset):
@@ -30,11 +30,11 @@ class Dataset(torch.utils.data.Dataset):
         self.focal = {}
         self.princpt = {}
 
-        self.width = 1024
-        self.height = 667
+        self.width = CameraSetupInBlender2.get_img_width()
+        self.height = CameraSetupInBlender2.get_img_height()
         for camera_nr in range(36):
             camera_str = "{:03d}".format(camera_nr)
-            camera = CameraInSetup(camera_nr)
+            camera = CameraSetupInBlender2(camera_nr)
             self.allcameras.append(camera_str)
 
             # cameras need to be scaled because the volume is normalized to the space of [1,-1]^3
