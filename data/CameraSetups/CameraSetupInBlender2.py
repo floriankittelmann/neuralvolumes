@@ -98,9 +98,9 @@ class CameraSetupInBlender2:
     def get_img_width() -> int:
         return 1024
 
-    def get_render_rot(self, idx):
+    def get_render_rot(self, idx, scale_factor=2.0):
         nof_frames = 500.0
-        radius = self.get_radius()
+        radius = self.get_radius() * scale_factor
         step = 2.0 * math.pi / nof_frames
         alpha = idx * step
         x = math.cos(alpha) * radius

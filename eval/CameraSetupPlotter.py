@@ -1,5 +1,6 @@
 import numpy as np
 from eval.CoordinateSystem import CoordinateSystem
+from eval.GlobalCoordinateSystem import GlobalCoordinateSystem
 from eval.CubePlotter import CubePlotter
 from config_templates.blender2_config import get_dataset as get_dataset_blender
 from config_templates.dryice1_config import get_dataset as get_dataset_dryice
@@ -10,6 +11,7 @@ from models.RayMarchingHelper import RayMarchingHelper
 import torch
 import copy
 from data.CameraSetups.CameraSetupInBlender2 import CameraSetupInBlender2
+
 
 class CameraSetupPlotter:
     MODE_BLENDER2_DATASET = 1
@@ -41,7 +43,7 @@ class CameraSetupPlotter:
         self.list_ax = []
         fig = plt.figure()
         for i in range(self.nof_plots):
-            ax = fig.add_subplot(self.nof_rows, self.nof_cols, i+1, projection='3d')
+            ax = fig.add_subplot(self.nof_rows, self.nof_cols, i + 1, projection='3d')
             ax.set_xlim(-5, 5)
             ax.set_ylim(-5, 5)
             ax.set_zlim(-5, 5)
@@ -121,12 +123,14 @@ class CameraSetupPlotter:
     def plot_rotrender(self):
         self.__init_plot()
         self.current_index_plot = 0
+        cs = GlobalCoordinateSystem()
         for idx in range(8):
             print("Create Plot {}".format(idx))
             self.__plot_location_neural_volumes()
             self.__plot_coordinate_system_rotrender(idx)
             self.__plot_ray_marching_positions_from_cam_index(idx)
             ax = self.__get_current_ax()
+            cs.draw(ax)
             title = "Position {}".format(idx)
             ax.title.set_text(title)
             self.current_index_plot = self.current_index_plot + 1
