@@ -46,11 +46,11 @@ class Dataset(torch.utils.data.Dataset):
         y = math.sin(alpha) * radius
         z = 0.0
 
-        z_rot = alpha + (90 / (2 * math.pi))
+        z_rot = alpha + (90.0 / 360.0 * 2.0 * math.pi)
         xyz_rot = [0.0, 0.0, z_rot]
         xyz_rot = R.from_euler('xyz', xyz_rot)
         extrinsic_matrix = np.array(xyz_rot.as_matrix()).astype(np.float32)
-        rad_rot = 180.0 / 360.0 * 2 * math.pi
+        rad_rot = 180.0 / 360.0 * 2.0 * math.pi
         y_rot_matrix = np.asarray([
             [math.cos(rad_rot), 0, math.sin(rad_rot)],
             [0, 1, 0],
