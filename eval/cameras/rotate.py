@@ -10,7 +10,6 @@ import numpy as np
 
 import torch.utils.data
 from data.CameraSetups.CameraSetupInBlender2 import CameraSetupInBlender2
-from scipy.spatial.transform import Rotation as R
 
 
 class Dataset(torch.utils.data.Dataset):

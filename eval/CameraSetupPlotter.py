@@ -3,22 +3,27 @@ from eval.CoordinateSystem import CoordinateSystem
 from eval.CubePlotter import CubePlotter
 from config_templates.blender2_config import get_dataset as get_dataset_blender
 from config_templates.dryice1_config import get_dataset as get_dataset_dryice
+from config_templates.blender2_config import Render as BlenderRender
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation
 from models.RayMarchingHelper import RayMarchingHelper
 import torch
 import copy
-
+from data.CameraSetups.CameraSetupInBlender2 import CameraSetupInBlender2
 
 class CameraSetupPlotter:
     MODE_BLENDER2_DATASET = 1
     MODE_DRYICE_DATASET = 2
+    MODE_ROT_RENDER = 3
 
     def __init__(self, mode: int):
         if mode == self.MODE_BLENDER2_DATASET:
             self.ds = get_dataset_blender()
         elif mode == self.MODE_DRYICE_DATASET:
             self.ds = get_dataset_dryice()
+        elif mode == self.MODE_ROT_RENDER:
+            blender = BlenderRender()
+            self.ds = blender.get_dataset()
         else:
             raise Exception("mode not known")
         self.krt = self.ds.get_krt()
@@ -30,6 +35,7 @@ class CameraSetupPlotter:
         self.nof_cols = 4
         self.list_ax = []
         self.current_index_plot = 0
+        self.camera_setup = CameraSetupInBlender2(1)
 
     def __init_plot(self):
         self.list_ax = []
@@ -68,7 +74,7 @@ class CameraSetupPlotter:
         focal = dataset_of_camera['focal']
         camrot = dataset_of_camera['camrot']
         campos = dataset_of_camera['campos']
-        pixelcoords = torch.from_numpy(pixelcoords.reshape((1, 1024, 667, 2)))
+        pixelcoords = torch.from_numpy(pixelcoords.reshape((1, 1024, 668, 2)))
         princpt = torch.from_numpy(princpt.reshape((1, 2)))
         focal = torch.from_numpy(focal.reshape((1, 2)))
         camrot = torch.from_numpy(camrot.reshape((1, 3, 3)))
@@ -105,6 +111,29 @@ class CameraSetupPlotter:
 
     def __get_current_ax(self):
         return self.list_ax[self.current_index_plot]
+
+    def __plot_coordinate_system_rotrender(self, idx: int):
+        campos, camrot = self.camera_setup.get_render_rot(idx)
+        rot_cam = Rotation.from_matrix(camrot)
+        cs_cam = CoordinateSystem(campos[0], campos[1], campos[2], rot_cam)
+        cs_cam.draw(self.__get_current_ax())
+
+    def plot_rotrender(self):
+        self.__init_plot()
+        self.current_index_plot = 0
+        for idx in range(8):
+            print("Create Plot {}".format(idx))
+            self.__plot_location_neural_volumes()
+            self.__plot_coordinate_system_rotrender(idx)
+            self.__plot_ray_marching_positions_from_cam_index(idx)
+            ax = self.__get_current_ax()
+            title = "Position {}".format(idx)
+            ax.title.set_text(title)
+            self.current_index_plot = self.current_index_plot + 1
+            if self.current_index_plot >= self.nof_plots:
+                plt.show()
+                self.__init_plot()
+        plt.show()
 
     def plot_camera_setup(self):
         self.__init_plot()

@@ -111,5 +111,5 @@ class CameraSetupInBlender2:
 
         z_rot = alpha + math.pi / 2
         z_rot_degrees = z_rot / (2.0 * math.pi) * 360.0
-        camrot = self.__get_cam_rot_autoencoder(0.0, 0.0, z_rot_degrees)
+        camrot = self.__get_cam_rot_autoencoder(90.0, 0.0, z_rot_degrees)
         return campos, camrot

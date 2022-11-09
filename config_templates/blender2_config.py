@@ -44,8 +44,11 @@ class Train():
     batchsize = 16
     maxiter = 500000
     lr = 0.0001
+
     def get_autoencoder(self, dataset): return get_autoencoder(dataset)
+
     def get_dataset(self): return get_dataset(subsampletype="random2")
+
     def get_optimizer(self, ae):
         import itertools
         import torch.optim
@@ -84,8 +87,11 @@ class ProgressWriter():
 class Progress():
     """Write out diagnostic images during training."""
     batchsize = 16
+
     def get_ae_args(self): return dict(outputlist=["irgbrec"])
+
     def get_dataset(self): return get_dataset(maxframes=1)
+
     def get_writer(self): return ProgressWriter()
 
 
@@ -99,10 +105,13 @@ class Render():
         self.showtarget = showtarget
         self.viewtemplate = viewtemplate
         self.batchsize = 16
+
     def get_autoencoder(self, dataset):
         return get_autoencoder(dataset)
+
     def get_ae_args(self):
         return dict(outputlist=["irgbrec"], viewtemplate=self.viewtemplate)
+
     def get_dataset(self):
         import data.utils
         import eval.cameras.rotate as cameralib
@@ -112,6 +121,7 @@ class Render():
             return data.utils.JoinDataset(camdataset, dataset)
         else:
             return dataset
+
     def get_writer(self, nthreads=16):
         import eval.writers.videowriter as writerlib
         return writerlib.Writer(
