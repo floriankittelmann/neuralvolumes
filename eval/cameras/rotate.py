@@ -5,7 +5,6 @@
 # LICENSE file in the root directory of this source tree.
 #
 import math
-
 import numpy as np
 
 import torch.utils.data
@@ -14,6 +13,8 @@ from data.CameraSetups.CameraSetupInBlender2 import CameraSetupInBlender2
 
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, length, period=128):
+        print(length)
+        exit()
         self.camera = CameraSetupInBlender2(1)
         self.length = length
         self.period = period
