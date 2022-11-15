@@ -41,7 +41,7 @@ def get_autoencoder(dataset):
 # A profile is instantiated by the training or evaluation scripts
 # and controls how the dataset and autoencoder is created
 class Train():
-    batchsize = 16
+    batchsize = 64
     maxiter = 500000
     lr = 0.0001
 

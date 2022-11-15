@@ -104,7 +104,7 @@ class Dataset(torch.utils.data.Dataset):
         if "fixedcamimage" in self.keyfilter:
 
             ninput = len(self.fixedcameras)
-            fixedcamimage = np.zeros((3 * ninput, 128, 83), dtype=np.float32)
+            fixedcamimage = np.zeros((3 * ninput, 512, 334), dtype=np.float32)
             for i in range(ninput):
                 imagepath = (
                     "experiments/blender2/data/{}/cam{}_frame{:04}.jpg"
