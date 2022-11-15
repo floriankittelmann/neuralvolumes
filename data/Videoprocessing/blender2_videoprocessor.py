@@ -1,6 +1,8 @@
 import cv2
 import os
 
+WIDTH_OUTPUT_IMG = 667
+HEIGHT_OUTPUT_IMG = 1024
 
 def write_frame_by_frame_to_folder(cam_index: str, video_path: str):
     folder_path = current_path + "/" + cam_index
@@ -15,7 +17,7 @@ def write_frame_by_frame_to_folder(cam_index: str, video_path: str):
             continue
         else:
             image_path = "{}/cam{}_frame{:04d}.jpg".format(folder_path, cam_index, frame_id)
-            frame = cv2.resize(frame, (667, 1024))
+            frame = cv2.resize(frame, (WIDTH_OUTPUT_IMG, HEIGHT_OUTPUT_IMG))
             cv2.imwrite(image_path, frame)
             print(image_path)
 

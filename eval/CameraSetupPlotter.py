@@ -5,6 +5,7 @@ from eval.CubePlotter import CubePlotter
 from config_templates.blender2_config import get_dataset as get_dataset_blender
 from config_templates.dryice1_config import get_dataset as get_dataset_dryice
 from config_templates.blender2_config import Render as BlenderRender
+from config_templates.blender2reduced_config import get_dataset as get_dataset_blender_reduced
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation
 from models.RayMarchingHelper import RayMarchingHelper
@@ -17,6 +18,7 @@ class CameraSetupPlotter:
     MODE_BLENDER2_DATASET = 1
     MODE_DRYICE_DATASET = 2
     MODE_ROT_RENDER = 3
+    MODE_BLENDER2_REDUCED = 4
 
     def __init__(self, mode: int):
         if mode == self.MODE_BLENDER2_DATASET:
@@ -26,6 +28,8 @@ class CameraSetupPlotter:
         elif mode == self.MODE_ROT_RENDER:
             blender = BlenderRender()
             self.ds = blender.get_dataset()
+        elif mode == self.MODE_BLENDER2_REDUCED:
+            self.ds = get_dataset_blender_reduced()
         else:
             raise Exception("mode not known")
         self.krt = self.ds.get_krt()
