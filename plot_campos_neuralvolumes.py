@@ -14,5 +14,5 @@ if __name__ == "__main__":
         plotter = CameraSetupPlotter(CameraSetupPlotter.MODE_ROT_RENDER)
         plotter.plot_rotrender()
     else:
-        plotter = CameraSetupPlotter(CameraSetupPlotter.MODE_BLENDER2_DATASET)
+        plotter = CameraSetupPlotter(CameraSetupPlotter.MODE_BLENDER2_REDUCED)
         plotter.plot_camera_setup()
