@@ -8,7 +8,7 @@ from config_templates.blender2_config import Render as BlenderRender
 from config_templates.blender2reduced_config import get_dataset as get_dataset_blender_reduced
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation
-from models.RayMarchingHelper import RayMarchingHelper
+from models.RayMarchingHelper import init_with_camera_position
 import torch
 import copy
 from data.CameraSetups.CameraSetupInBlender2 import CameraSetupInBlender2
@@ -80,13 +80,13 @@ class CameraSetupPlotter:
         focal = dataset_of_camera['focal']
         camrot = dataset_of_camera['camrot']
         campos = dataset_of_camera['campos']
-        pixelcoords = torch.from_numpy(pixelcoords.reshape((1, 1024, 668, 2)))
+        pixelcoords = torch.from_numpy(pixelcoords.reshape((1, 1024, 667, 2)))
         princpt = torch.from_numpy(princpt.reshape((1, 2)))
         focal = torch.from_numpy(focal.reshape((1, 2)))
         camrot = torch.from_numpy(camrot.reshape((1, 3, 3)))
         campos = torch.from_numpy(campos.reshape((1, 3)))
         dt = 0.1
-        ray_helper = RayMarchingHelper(pixelcoords, princpt, focal, camrot, campos, dt)
+        ray_helper = init_with_camera_position(pixelcoords, princpt, focal, camrot, campos, dt)
         list_points_to_plot = [
             {'x': 0, 'y': 0, 'plotX': None, 'plotY': None, 'plotZ': None},
             {'x': 1023, 'y': 0, 'plotX': None, 'plotY': None, 'plotZ': None},

@@ -7,7 +7,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.RayMarchingHelper import RayMarchingHelper
+from models.RayMarchingHelper import init_with_camera_position, RayMarchingHelper
+
 
 class Autoencoder(nn.Module):
     def __init__(self, dataset, encoder, decoder, volsampler, colorcal, dt, stepjitter=0.01, estimatebg=False):
@@ -57,8 +58,8 @@ class Autoencoder(nn.Module):
         result["losses"].update(decout["losses"])
         result["decout"] = decout
 
-        ray_helper = RayMarchingHelper(pixelcoords, princpt, focal, camrot, campos, self.dt)
-        rayrgb, rayalpha = ray_helper.do_raymarching(self.volsampler, decout, viewtemplate, self.stepjitter)
+        raymarching = init_with_camera_position(pixelcoords, princpt, focal, camrot, campos, self.dt)
+        rayrgb, rayalpha = raymarching.do_raymarching(self.volsampler, decout, viewtemplate, self.stepjitter)
 
         if image is not None:
             imagesize = torch.tensor(image.size()[3:1:-1], dtype=torch.float32, device=pixelcoords.device)

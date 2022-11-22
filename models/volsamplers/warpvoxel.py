@@ -16,9 +16,11 @@ class VolSampler(nn.Module):
 
     def forward(self, pos, template, warp=None, gwarps=None, gwarprot=None, gwarpt=None, viewtemplate=False, **kwargs):
         valid = None
+        cur_device = torch.cuda.current_device()
         if pos.dtype == torch.float64:
-            cur_device = torch.cuda.current_device()
             pos = pos.type(torch.FloatTensor).to(cur_device)
+        if template.dtype == torch.float64:
+            template = template.type(torch.FloatTensor).to(cur_device)
         if not viewtemplate:
             if gwarps is not None:
                 pos = (torch.sum(
@@ -31,7 +33,6 @@ class VolSampler(nn.Module):
                 else:
                     valid = torch.prod((pos > -1.) * (pos < 1.), dim=-1).float()
                     pos = F.grid_sample(warp, pos).permute(0, 2, 3, 4, 1)
-
         val = F.grid_sample(template, pos)
         if valid is not None:
             val = val * valid[:, None, :, :, :]

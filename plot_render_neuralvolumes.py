@@ -2,11 +2,20 @@ import time
 import os
 import sys
 import torch.utils.data
+from pymeshfix_test import plot_nv_from_decout
 from train import import_module
 from train import is_local_env
 from torch.utils.data import DataLoader
 from render_2 import parse_arguments
 import numpy as np
+
+
+def save_template_as_np_array(template: torch.Tensor):
+    np_template = template.cpu().numpy()
+    volume_t0 = np_template[0, :, :, :, :]
+    with open('test.npy', 'wb') as f:
+        np.save(f, volume_t0)
+
 
 if __name__ == "__main__":
     args, parsed = parse_arguments()
@@ -30,7 +39,7 @@ if __name__ == "__main__":
     batch_size_training = profile.batchsize
     if is_local_env():
         nof_workers = 1
-        batch_size_training = 3
+        batch_size_training = 4
     ae = profile.get_autoencoder(dataset)
     torch.cuda.set_device(args.devices[0])
     ae = torch.nn.DataParallel(ae, device_ids=args.devices).to("cuda").eval()
@@ -42,7 +51,6 @@ if __name__ == "__main__":
     # eval
     dataloader_render = DataLoader(dataset, batch_size=batch_size_training, shuffle=False, drop_last=True,
                                    num_workers=nof_workers)
-    render_writer = profile.get_writer()
 
     iternum = 0
     itemnum = 0
@@ -53,40 +61,11 @@ if __name__ == "__main__":
             b = next(iter(data.values())).size(0)
             # forward
             output = ae(iternum, [], **{k: x.to("cuda") for k, x in data.items()}, **profile.get_ae_args())
-            print("output")
-            print(output.keys())
 
-            """ rbg bilddaten vom aktuellen Batch torch.Size([16, 3, 640, 480])
-            print("output -> irgbrec")
-            print(type(output["irgbrec"]))
-            print(output["irgbrec"].size())
-            print(" ")
-            print(" ")"""
-
-            print("output -> decout")
-            print(type(output["decout"]))
-            print(output["decout"].keys())
-
-            print(" ")
-            print(" ")
-
-            print("output -> decout -> template")
-            print(type(output["decout"]["template"]))
-            print(output["decout"]["template"].size())
-
-            template_tensor = output["decout"]["template"]
-            np_template = template_tensor.cpu().numpy()
-            print(type(np_template))
-            print(np_template.shape)
-
-            sample_rgb, sample_alpha = self.volsampler(raypos[:, None, :, :, :], **decout, viewtemplate=viewtemplate)
-
-            #np.save(os.path.join(outpath, "batch_{}.npy".format(iternum)), np_template)
-            """ NoneType??
-            print(" ")
-            print(" ")
-            print("output -> decout -> warp")
-            print(type(output["decout"]["warp"]))"""
+            plot_nv_from_decout(output["decout"])
+            print("worked")
             exit()
+            template_tensor = output["decout"]["template"]
+            save_template_as_np_array(template_tensor)
             iternum += 1
             itemnum += b
