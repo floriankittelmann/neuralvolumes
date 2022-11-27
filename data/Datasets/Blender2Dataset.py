@@ -19,7 +19,7 @@ class Blender2Dataset(torch.utils.data.Dataset):
             keyfilter: List[str],
             framelist: List[int],
             fixedcameras: List[str] = ['028', '001', '019'],
-            subsampletype = None,
+            subsampletype=None,
             subsamplesize: int = 0,
             imagemean: float = 100.,
             imagestd: float = 25.,
@@ -45,7 +45,8 @@ class Blender2Dataset(torch.utils.data.Dataset):
             self.camrot[camera_str] = camera.get_cam_rot_matrix_training()
 
             # the focal length does not needed to normalize because it is given in px
-            self.focal[camera_str] = np.array([camera.get_focal_length() * scale_focal, camera.get_focal_length() * scale_focal])
+            self.focal[camera_str] = np.array(
+                [camera.get_focal_length() * scale_focal, camera.get_focal_length() * scale_focal])
             self.princpt[camera_str] = np.array([camera.get_principt_height(), camera.get_principt_width()])
 
         self.cameras = list(filter(camerafilter, self.allcameras))

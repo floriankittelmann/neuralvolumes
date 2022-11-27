@@ -11,13 +11,13 @@ and controls how the dataset and autoencoder is created
 class TrainBlender2:
     def __init__(
             self,
-            get_autencoder_func: Callable,
+            get_autoencoder_func: Callable,
             get_dataset_func: Callable,
             batchsize: int,
             maxiter: int,
             lr: float
     ):
-        self.get_autencoder_func = get_autencoder_func
+        self.get_autoencoder_func = get_autoencoder_func
         self.get_dataset_func = get_dataset_func
         self.batchsize = batchsize
         self.maxiter = maxiter
@@ -29,7 +29,7 @@ class TrainBlender2:
 
     def get_lr(self) -> float: return self.lr
 
-    def get_autoencoder(self, dataset): return self.get_autencoder_func(dataset)
+    def get_autoencoder(self, dataset): return self.get_autoencoder_func(dataset)
 
     def get_dataset(self): return self.get_dataset_func(subsampletype="random2")
 
@@ -70,6 +70,7 @@ class ProgressWriter:
 
 class Progress:
     """Write out diagnostic images during training."""
+
     def __init__(
             self,
             get_dataset_func: Callable,
@@ -93,15 +94,26 @@ class Render:
         e.g., python render.py {configpath} Render --maxframes 128
     """
 
-    def __init__(self, cam="rotate", maxframes=-1, showtarget=False, viewtemplate=False):
+    def __init__(
+            self,
+            get_autoencoder_func: Callable,
+            get_dataset_func: Callable,
+            batchsize: int = 16,
+            cam: str = "rotate",
+            maxframes: int = -1,
+            showtarget: bool = False,
+            viewtemplate: bool = False,
+    ):
+        self.get_autoencoder_func = get_autoencoder_func
+        self.get_dataset_func = get_dataset_func
         self.cam = cam
         self.maxframes = maxframes
         self.showtarget = showtarget
         self.viewtemplate = viewtemplate
-        self.batchsize = 16
+        self.batchsize = batchsize
 
     def get_autoencoder(self, dataset):
-        return get_autoencoder(dataset)
+        return self.get_autoencoder_func(dataset)
 
     def get_ae_args(self):
         return dict(outputlist=["irgbrec"], viewtemplate=self.viewtemplate)
@@ -109,7 +121,7 @@ class Render:
     def get_dataset(self):
         import data.utils
         import eval.cameras.rotate as cameralib
-        dataset = get_dataset(camerafilter=lambda x: x == self.cam, maxframes=self.maxframes)
+        dataset = self.get_dataset_func(camerafilter=lambda x: x == self.cam, maxframes=self.maxframes)
         if self.cam == "rotate":
             camdataset = cameralib.Dataset(len(dataset))
             return data.utils.JoinDataset(camdataset, dataset)

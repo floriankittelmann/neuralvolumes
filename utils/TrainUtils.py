@@ -89,8 +89,9 @@ class TrainUtils:
         starttime = time.time()
         import_config_util = ImportConfigUtil()
         experconfig = import_config_util.import_module(config_path)
-        train_profile = experconfig.get_train_profile()
-        progressprof = experconfig.get_progress()
+        datasetconfig = experconfig.DatasetConfig()
+        train_profile = datasetconfig.get_train_profile()
+        progressprof = datasetconfig.get_progress()
         print("Config loaded ({:.2f} s)".format(time.time() - starttime))
         return train_profile, progressprof
 
