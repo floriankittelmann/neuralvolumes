@@ -15,6 +15,7 @@ import matplotlib.cm as cm
 
 from PIL import Image
 
+
 def writeimage(x):
     itemnum, imgout, outpath = x
     gamma_correction_value = (2. / 1.)
@@ -24,6 +25,7 @@ def writeimage(x):
         imgout = imgout[:, :-1]
 
     Image.fromarray(imgout).save(os.path.join(outpath, "{:06}.jpg".format(itemnum)))
+
 
 class Writer():
     def __init__(
@@ -95,19 +97,19 @@ class Writer():
 
         outpath_img_folder = self.outpath_img_folder
         self.writepool.map(writeimage,
-                zip(itemnum.data.to("cpu").numpy(),
-                    imgout,
-                    [outpath_img_folder for i in range(itemnum.size(0))]))
+                           zip(itemnum.data.to("cpu").numpy(),
+                               imgout,
+                               [outpath_img_folder for i in range(itemnum.size(0))]))
         self.nitems += itemnum.size(0)
 
     def finalize(self):
         # make video file
         command = (
-                "ffmpeg -y -r 30 -i {}/%06d.jpg "
-                "-vframes {} "
-                "-vcodec libx264 -crf 18 "
-                "-pix_fmt yuv420p "
-                "{}".format(self.outpath_img_folder, self.nitems, self.outpath_video)
-                ).split()
+            "ffmpeg -y -r 30 -i {}/%06d.jpg "
+            "-vframes {} "
+            "-vcodec libx264 -crf 18 "
+            "-pix_fmt yuv420p "
+            "{}".format(self.outpath_img_folder, self.nitems, self.outpath_video)
+        ).split()
         subprocess.call(command)
         shutil.rmtree(self.outpath_img_folder)

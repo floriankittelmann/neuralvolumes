@@ -102,7 +102,7 @@ class Render():
             return data.utils.JoinDataset(camdataset, dataset)
         else:
             return dataset
-    def get_writer(self):
+    def get_writer(self, outpath):
         import eval.writers.videowriter as writerlib
         return writerlib.Writer(
             os.path.join(os.path.dirname(__file__),

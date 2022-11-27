@@ -54,7 +54,7 @@ class RenderUtils:
 
         dataloader_render = DataLoader(dataset, batch_size=batch_size_training, shuffle=False, drop_last=True,
                                        num_workers=nof_workers)
-        render_writer = profile.get_writer()
+        render_writer = profile.get_writer(outpath, batch_size_training)
 
         iternum = 0
         itemnum = 0
