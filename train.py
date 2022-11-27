@@ -11,9 +11,9 @@ import gc
 import wandb
 import numpy as np
 import os
-import torch.utils.data
 from utils.EnvUtils import EnvUtils
 from utils.TrainUtils import TrainUtils
+import torch.backends.cudnn
 
 sys.dont_write_bytecode = True
 torch.backends.cudnn.benchmark = True  # gotta go fast!
@@ -97,7 +97,7 @@ if __name__ == "__main__":
                                     **progressprof.get_ae_args())
 
                 b = data["campos"].size(0)
-                writer.batch(iternum, iternum * trainprofile.get_batchsize + torch.arange(b), **testbatch, **testoutput)
+                writer.batch(iternum, iternum * trainprofile.get_batchsize() + torch.arange(b), outpath, **testbatch, **testoutput)
 
             # update parameters
             aeoptim.zero_grad()

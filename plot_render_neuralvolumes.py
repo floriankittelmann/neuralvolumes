@@ -6,7 +6,7 @@ from pymeshfix_test import plot_nv_from_decout
 from train import import_module
 from train import is_local_env
 from torch.utils.data import DataLoader
-from render_2 import parse_arguments
+from render import parse_arguments
 import numpy as np
 
 

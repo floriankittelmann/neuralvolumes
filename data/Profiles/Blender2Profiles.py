@@ -47,7 +47,7 @@ class TrainBlender2:
 
 
 class ProgressWriter:
-    def batch(self, iternum, itemnum, **kwargs):
+    def batch(self, iternum, itemnum, outpath, **kwargs):
         import numpy as np
         from PIL import Image
         rows = []
@@ -63,7 +63,6 @@ class ProgressWriter:
         if len(rows) == 0:
             rows.append(np.concatenate(row, axis=1))
         imgout = np.concatenate(rows, axis=0)
-        outpath = os.path.dirname(__file__)
         Image.fromarray(np.clip(imgout, 0, 255).astype(np.uint8)).save(
             os.path.join(outpath, "prog_{:06}.jpg".format(iternum)))
 

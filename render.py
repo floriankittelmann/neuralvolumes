@@ -1,99 +1,24 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
-# All rights reserved.
-#
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
-#
-"""Render object from training camera viewpoint or novel viewpoints."""
-import argparse
-import importlib
-import importlib.util
-import os
-import sys
-import time
-sys.dont_write_bytecode = True
+from utils.ImportConfigUtil import ImportConfigUtil
 
-import torch
-import torch.utils.data
-torch.backends.cudnn.benchmark = True # gotta go fast!
-
-def import_module(file_path, module_name):
-    spec = importlib.util.spec_from_file_location(module_name, file_path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    sys.modules[module_name] = module
-    return module
-
-def parse_arguments():
-    parser = argparse.ArgumentParser(description='Render')
-    parser.add_argument('experconfig', type=str, help='experiment config')
-    parser.add_argument('--profile', type=str, default="Render", help='config profile')
-    parser.add_argument('--devices', type=int, nargs='+', default=[0], help='devices')
-    parser.add_argument('--batchsize', type=int, default=16, help='batchsize')
-    parser.add_argument('--maxframes', type=int, default=-1)
-    parser.add_argument('--local', action='store_true',
-                        help='training on local machine with small memory size and small gpu power')
-    parsed, unknown = parser.parse_known_args()
-    for arg in unknown:
-        if arg.startswith(("-", "--")):
-            parser.add_argument(arg, type=eval)
-    args = parser.parse_args()
-    return args, parsed
+from utils.RenderUtils import RenderUtils
 
 if __name__ == "__main__":
-    # parse arguments
-    args, parsed = parse_arguments()
-    outpath = os.path.dirname(args.experconfig)
-    print(" ".join(sys.argv))
-    print("Output path:", outpath)
+    render_utils = RenderUtils()
+    args = render_utils.parse_cmd_arguments()
+    outpath = render_utils.get_outpath_and_print_infos(args)
 
-    # load config
-    experconfig = import_module(args.experconfig, "config")
-    profile = getattr(experconfig, args.profile)(**{k: v for k, v in vars(args).items() if k not in parsed})
-
-    batchsize = args.batchsize
-    if args.local:
-        batchsize = 2
-    # load datasets
-    dataset = profile.get_dataset_config_func()
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batchsize, shuffle=False, num_workers=batchsize)
-
-    # data writer
-    writer = profile.get_writer(nthreads=batchsize)
-
-    # build autoencoder
-    ae = profile.get_autoencoder_config_func(dataset)
-    torch.cuda.set_device(args.devices[0])
-    ae = torch.nn.DataParallel(ae, device_ids=args.devices).to("cuda").eval()
-
-    # load
-    state_dict = ae.module.state_dict()
-    trained_state_dict = torch.load("{}/aeparams.pt".format(outpath), map_location=torch.device('cuda', args.devices[0]))
-    trained_state_dict = {k: v for k, v in trained_state_dict.items() if k in state_dict}
-    state_dict.update(trained_state_dict)
-    ae.module.load_state_dict(state_dict, strict=False)
+    import_config_util = ImportConfigUtil()
+    experconfig = import_config_util.import_module(args.experconfig)
+    render_profile = experconfig.DatasetConfig().get_render_profile()
 
     # eval
-    iternum = 0
-    itemnum = 0
-    starttime = time.time()
+    if args.cam == "all":
+        for camera_nr in range(36):
+            camera = "{:03d}".format(camera_nr)
+            print("start with camera " + camera)
+            render_profile.cam = camera
+            render_utils.render(render_profile, args, outpath)
+    else:
+        render_profile.cam = args.cam
+        render_utils.render(render_profile, args, outpath)
 
-    with torch.no_grad():
-        for data in dataloader:
-            b = next(iter(data.values())).size(0)
-
-            # forward
-            output = ae(iternum, [], **{k: x.to("cuda") for k, x in data.items()}, **profile.get_ae_args())
-            exit()
-            writer.batch(iternum, itemnum + torch.arange(b), **data, **output)
-
-            endtime = time.time()
-            ips = 1. / (endtime - starttime)
-            print("{:4} / {:4} ({:.4f} iter/sec)".format(itemnum, len(dataset), ips), end="\n")
-            starttime = time.time()
-
-            iternum += 1
-            itemnum += b
-
-    # cleanup
-    writer.finalize()
