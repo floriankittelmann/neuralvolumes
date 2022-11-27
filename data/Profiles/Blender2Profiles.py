@@ -127,11 +127,12 @@ class Render:
         else:
             return dataset
 
-    def get_writer(self, outpath, nthreads=16):
+    def get_writer(self, outpath, nthreads=16, is_plot_batch=False):
         import eval.writers.videowriter as writerlib
         return writerlib.Writer(outpath,
             "render_{}{}.mp4".format("rotate" if self.cam is None else self.cam,
                                      "_template" if self.viewtemplate else ""),
             showtarget=self.showtarget,
-            nthreads=nthreads
+            nthreads=nthreads,
+            is_plot_batch=is_plot_batch
         )

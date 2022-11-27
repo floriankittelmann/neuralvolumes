@@ -1,57 +1,39 @@
 import time
-import os
-import sys
+
 import torch.utils.data
-from pymeshfix_test import plot_nv_from_decout
-from train import import_module
-from train import is_local_env
 from torch.utils.data import DataLoader
-from render import parse_arguments
-import numpy as np
 
-
-def save_template_as_np_array(template: torch.Tensor):
-    np_template = template.cpu().numpy()
-    volume_t0 = np_template[0, :, :, :, :]
-    with open('test.npy', 'wb') as f:
-        np.save(f, volume_t0)
-
+from utils.EnvUtils import EnvUtils
+from utils.ImportConfigUtil import ImportConfigUtil
+from utils.RenderUtils import RenderUtils
 
 if __name__ == "__main__":
-    args, parsed = parse_arguments()
-    outpath = os.path.dirname(args.experconfig)
-    print(" ".join(sys.argv))
-    print("Output path:", outpath)
+    render_utils = RenderUtils()
+    args = render_utils.parse_cmd_arguments()
+    outpath = render_utils.get_outpath_and_print_infos(args)
 
-    print("----- Evaluate on following devices -----")
-    for device_id in args.devices:
-        print("GPU Device with ID {}".format(device_id))
-        device = torch.cuda.get_device_properties(device_id)
-        print("GPU Properties: {}, Memory: {} MB, ProzessorCount: {}".format(
-            device.name,
-            (device.total_memory / (2 * 1024)),
-            device.multi_processor_count))
+    import_config_util = ImportConfigUtil()
+    experconfig = import_config_util.import_module(args.experconfig)
+    profile = experconfig.DatasetConfig().get_render_profile()
 
-    experconfig = import_module(args.experconfig, "config")
-    profile = getattr(experconfig, args.profile)(**{k: v for k, v in vars(args).items() if k not in parsed})
-    dataset = profile.get_dataset_config_func()
+    env_utils = EnvUtils()
     nof_workers = args.nofworkers
-    batch_size_training = profile.batchsize
-    if is_local_env():
+    batch_size = profile.batchsize
+    if env_utils.is_local_env():
         nof_workers = 1
-        batch_size_training = 4
-    ae = profile.get_autoencoder_config_func(dataset)
+        batch_size = 3
+    dataset = profile.get_dataset()
+    ae = profile.get_autoencoder(dataset)
     torch.cuda.set_device(args.devices[0])
     ae = torch.nn.DataParallel(ae, device_ids=args.devices).to("cuda").eval()
 
     # load
     ae.module.load_state_dict(
-        torch.load("{}/aeparams.pt".format(outpath), map_location=torch.device('cuda', args.devices[0])), strict=False)
+        torch.load("{}/aeparams.pt".format(outpath), map_location=torch.device('cuda', args.devices[0])),
+        strict=False)
 
-    # eval
-    dataloader_render = DataLoader(dataset, batch_size=batch_size_training, shuffle=False, drop_last=True,
-                                   num_workers=nof_workers)
-
+    dataloader_render = DataLoader(dataset, batch_size=batch_size, shuffle=False, drop_last=True, num_workers=nof_workers)
+    render_writer = profile.get_writer(outpath=outpath, nthreads=batch_size, is_plot_batch=True)
     iternum = 0
     itemnum = 0
     starttime = time.time()
@@ -61,11 +43,12 @@ if __name__ == "__main__":
             b = next(iter(data.values())).size(0)
             # forward
             output = ae(iternum, [], **{k: x.to("cuda") for k, x in data.items()}, **profile.get_ae_args())
+            render_writer.batch(iternum, itemnum + torch.arange(b), **data, **output)
 
-            plot_nv_from_decout(output["decout"])
-            print("worked")
-            exit()
-            template_tensor = output["decout"]["template"]
-            save_template_as_np_array(template_tensor)
+            endtime = time.time()
+            ips = 1. / (endtime - starttime)
+            print("{:4} / {:4} ({:.4f} iter/sec)".format(itemnum, len(dataset), ips), end="\n")
+            starttime = time.time()
+
             iternum += 1
             itemnum += b
