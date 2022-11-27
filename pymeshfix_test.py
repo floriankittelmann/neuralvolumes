@@ -15,35 +15,30 @@ def plot_loosing_edges(filenameMesh: str):
     meshfix.plot()
 
 
-def get_distributed_coords(z_value: float, nof_points: int) -> np.ndarray:
+def get_distributed_coords(batchsize: int, z_value: float, nof_points: int) -> np.ndarray:
     list_coordinates = [(x, y, z_value)
                         for x in np.linspace(-1.0, 1.0, nof_points)
-                        for y in np.linspace(-1.0, 1.0, nof_points)]
+                        for y in np.linspace(-1.0, 1.0, nof_points)
+                        for i in range(batchsize)]
     start_coords = np.array(list_coordinates)
-    return start_coords.reshape((1, nof_points, nof_points, 3))
+    return start_coords.reshape((batchsize, nof_points, nof_points, 3))
+
 
 
 def plot_nv_from_decout(decout: dict):
     nof_points = 10
-
-    start_coords = get_distributed_coords(-1.0, nof_points)
-    direction_coords = np.full((1, nof_points, nof_points, 3), (0.0, 0.0, 1.0))
+    batchsize = 4
+    start_coords = get_distributed_coords(batchsize, -1.0, nof_points)
+    direction_coords = np.full((batchsize, nof_points, nof_points, 3), (0.0, 0.0, 1.0))
     dt = 2.0 / float(nof_points)
-    t = start_coords
-    end_coords = get_distributed_coords(1.0, nof_points)
-    print("----")
-    print(start_coords.shape)
-    print(direction_coords.shape)
-    print(type(dt))
-    print(t.shape)
-    print(end_coords.shape)
-    exit()
+    t = np.ones((batchsize, nof_points, nof_points)) * -1
+    end = np.ones((batchsize, nof_points, nof_points))
     raymarching = RayMarchingHelper(
-        torch.from_numpy(start_coords),
-        torch.from_numpy(direction_coords),
+        torch.from_numpy(start_coords).to("cuda"),
+        torch.from_numpy(direction_coords).to("cuda"),
         dt,
-        torch.from_numpy(t),
-        torch.from_numpy(end_coords),
+        torch.from_numpy(t).to("cuda"),
+        torch.from_numpy(end).to("cuda"),
         RayMarchingHelper.OUTPUT_VOLUME
     )
     rgb, alpha = raymarching.do_raymarching(
@@ -52,6 +47,10 @@ def plot_nv_from_decout(decout: dict):
         False,
         0.0
     )
+    print(rgb.size())
+    print(alpha.size())
+    print(rgb[0, 0, 0, 0, 0])
+    print(alpha[0, 0, 0, 0, 0])
 
 
 
@@ -157,11 +156,11 @@ if __name__ == "__main__":
     # filename = "C:\\Users\\Flori\\Desktop\\BaseMesh_Anim.stl"
     # plot_stl_pyvista(filename)
 
-    plot_nv_from_decout()
+    # plot_nv_from_decout()
 
     # plot neural volumes from np file
-    # filename = "test.npy"
-    # plot_nv_pyvista(filename)
+    filename = "test.npy"
+    plot_nv_pyvista(filename)
 
     # plot voxel test
     # voxel_plot_test()

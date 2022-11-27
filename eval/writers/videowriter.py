@@ -16,7 +16,7 @@ import matplotlib.cm as cm
 from PIL import Image
 
 def writeimage(x):
-    randid, itemnum, imgout, outpath = x
+    itemnum, imgout, outpath = x
     gamma_correction_value = (2. / 1.)
     imgout = np.clip(np.clip(imgout / 255., 0., 255.) ** gamma_correction_value * 255., 0., 255).astype(np.uint8)
 
@@ -26,7 +26,17 @@ def writeimage(x):
     Image.fromarray(imgout).save(os.path.join(outpath, "{:06}.jpg".format(itemnum)))
 
 class Writer():
-    def __init__(self, outpath, filename, showtarget=False, showdiff=False, bgcolor=[0., 0., 0.], colcorrect=[1., 1., 1.], nthreads=16):
+    def __init__(
+            self,
+            outpath,
+            filename,
+            showtarget=False,
+            showdiff=False,
+            bgcolor=[0., 0., 0.],
+            colcorrect=[1., 1., 1.],
+            nthreads=16,
+            is_plot_batch=False
+    ):
         self.showtarget = showtarget
         self.showdiff = showdiff
         self.bgcolor = np.array(bgcolor, dtype=np.float32)
@@ -34,7 +44,10 @@ class Writer():
 
         # set up temporary output
         self.randid = ''.join([str(x) for x in np.random.randint(0, 9, size=10)])
-        outpath_img_folder = os.path.join(outpath, "{}".format(self.randid))
+        if is_plot_batch:
+            outpath_img_folder = os.path.join(outpath, "cache_plots")
+        else:
+            outpath_img_folder = os.path.join(outpath, "{}".format(self.randid))
         self.outpath_img_folder = outpath_img_folder
         self.outpath_video = os.path.join(outpath, filename)
 
@@ -46,7 +59,16 @@ class Writer():
         self.writepool = multiprocessing.Pool(nthreads)
         self.nitems = 0
 
-    def batch(self, iternum, itemnum, irgbrec, ialpharec=None, image=None, irgbsqerr=None, **kwargs):
+    def batch(
+            self,
+            iternum,
+            itemnum,
+            irgbrec,
+            ialpharec=None,
+            image=None,
+            irgbsqerr=None,
+            **kwargs
+    ):
         irgbrec = irgbrec.data.to("cpu").numpy().transpose((0, 2, 3, 1))
         if ialpharec is not None:
             ialpharec = ialpharec.data.to("cpu").numpy()[:, 0, :, :, None]
@@ -73,8 +95,7 @@ class Writer():
 
         outpath_img_folder = self.outpath_img_folder
         self.writepool.map(writeimage,
-                zip([self.randid for i in range(itemnum.size(0))],
-                    itemnum.data.to("cpu").numpy(),
+                zip(itemnum.data.to("cpu").numpy(),
                     imgout,
                     [outpath_img_folder for i in range(itemnum.size(0))]))
         self.nitems += itemnum.size(0)

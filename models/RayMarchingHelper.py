@@ -43,6 +43,7 @@ class RayMarchingHelper:
             else:
                 rayrgb_tmp = sample_rgb[:, :, 0, :, :] * contrib
                 rayalpha_tmp = contrib
+
                 print(rayrgb.size())
                 print(rayalpha.size())
                 exit()
@@ -111,9 +112,4 @@ def init_with_camera_position(pixelcoords, princpt, focal, camrot, campos, dt) -
     t = t - dt * torch.rand_like(t)
 
     raypos = campos[:, None, None, :] + raydir * t[..., None]  # NHWC
-    print(raypos.size())
-    print(raydir.size())
-    print(type(dt))
-    print(t.size())
-    print(tmax.size())
     return RayMarchingHelper(raypos, raydir, dt, t, tmax)

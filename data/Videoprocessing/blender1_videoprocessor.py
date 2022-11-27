@@ -18,7 +18,6 @@ def write_frame_by_frame_to_folder(cam_index: str, video_path: str):
             frame = cv2.resize(frame, (1024, 667))
             frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
             cv2.imwrite(image_path, frame)
-            print(image_path)
 
 
 if __name__ == "__main__":

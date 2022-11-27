@@ -34,13 +34,13 @@ if __name__ == "__main__":
 
     experconfig = import_module(args.experconfig, "config")
     profile = getattr(experconfig, args.profile)(**{k: v for k, v in vars(args).items() if k not in parsed})
-    dataset = profile.get_dataset()
+    dataset = profile.get_dataset_config_func()
     nof_workers = args.nofworkers
     batch_size_training = profile.batchsize
     if is_local_env():
         nof_workers = 1
         batch_size_training = 4
-    ae = profile.get_autoencoder(dataset)
+    ae = profile.get_autoencoder_config_func(dataset)
     torch.cuda.set_device(args.devices[0])
     ae = torch.nn.DataParallel(ae, device_ids=args.devices).to("cuda").eval()
 

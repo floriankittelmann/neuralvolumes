@@ -30,8 +30,8 @@ def render(profile_local, args_local):
     if is_local_env():
         nof_workers = 1
         batch_size_training = 3
-    dataset = profile_local.get_dataset()
-    ae = profile_local.get_autoencoder(dataset)
+    dataset = profile_local.get_dataset_config_func()
+    ae = profile_local.get_autoencoder_config_func(dataset)
     torch.cuda.set_device(args_local.devices[0])
     ae = torch.nn.DataParallel(ae, device_ids=args_local.devices).to("cuda").eval()
     # load

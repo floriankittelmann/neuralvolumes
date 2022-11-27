@@ -7,11 +7,25 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.RayMarchingHelper import init_with_camera_position, RayMarchingHelper
+from models.RayMarchingHelper import init_with_camera_position
+from models.colorcals.colorcal1 import Colorcal
+from models.decoders.voxel1 import Decoder
+from models.encoders.mvconv1 import Encoder
+from models.volsamplers.warpvoxel import VolSampler
 
 
 class Autoencoder(nn.Module):
-    def __init__(self, dataset, encoder, decoder, volsampler, colorcal, dt, stepjitter=0.01, estimatebg=False):
+    def __init__(
+            self,
+            dataset,
+            encoder: Encoder,
+            decoder: Decoder,
+            volsampler: VolSampler,
+            colorcal: Colorcal,
+            dt: float,
+            stepjitter: float = 0.01,
+            estimatebg: bool = False
+    ):
         super(Autoencoder, self).__init__()
 
         self.estimatebg = estimatebg
@@ -38,13 +52,13 @@ class Autoencoder(nn.Module):
         ret = super(Autoencoder, self).state_dict(destination, prefix, keep_vars)
         if not self.estimatebg:
             for k in self.bg.keys():
-                del ret[prefix+"bg."+k]
+                del ret[prefix + "bg." + k]
         return ret
 
     def forward(self, iternum, losslist, camrot, campos, focal, princpt, pixelcoords, validinput,
-            fixedcamimage=None, encoding=None, keypoints=None, camindex=None,
-            image=None, imagevalid=None, viewtemplate=False,
-            outputlist=[]):
+                fixedcamimage=None, encoding=None, keypoints=None, camindex=None,
+                image=None, imagevalid=None, viewtemplate=False,
+                outputlist=[]):
         result = {"losses": {}}
 
         # encode input or get encoding
@@ -71,8 +85,8 @@ class Autoencoder(nn.Module):
 
             if pixelcoords.size()[1:3] != image.size()[2:4]:
                 bg = F.grid_sample(
-                        torch.stack([self.bg[self.allcameras[camindex[i].item()]] for i in range(campos.size(0))], dim=0),
-                        samplecoords)
+                    torch.stack([self.bg[self.allcameras[camindex[i].item()]] for i in range(campos.size(0))], dim=0),
+                    samplecoords)
             else:
                 bg = torch.stack([self.bg[self.allcameras[camindex[i].item()]] for i in range(campos.size(0))], dim=0)
 
@@ -86,8 +100,8 @@ class Autoencoder(nn.Module):
         # opacity prior
         if "alphapr" in losslist:
             alphaprior = torch.mean(
-                    torch.log(0.1 + rayalpha.view(rayalpha.size(0), -1)) +
-                    torch.log(0.1 + 1. - rayalpha.view(rayalpha.size(0), -1)) - -2.20727, dim=-1)
+                torch.log(0.1 + rayalpha.view(rayalpha.size(0), -1)) +
+                torch.log(0.1 + 1. - rayalpha.view(rayalpha.size(0), -1)) - -2.20727, dim=-1)
             result["losses"]["alphapr"] = alphaprior
 
         # irgb loss

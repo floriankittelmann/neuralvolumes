@@ -2,7 +2,7 @@ import numpy as np
 from eval.CoordinateSystem import CoordinateSystem
 from eval.GlobalCoordinateSystem import GlobalCoordinateSystem
 from eval.CubePlotter import CubePlotter
-from config_templates.blender2_config import get_dataset as get_dataset_blender
+from config_templates.blender2_config import get_dataset_config_func as get_dataset_blender
 from config_templates.dryice1_config import get_dataset as get_dataset_dryice
 from config_templates.blender2_config import Render as BlenderRender
 from config_templates.blender2reduced_config import get_dataset as get_dataset_blender_reduced

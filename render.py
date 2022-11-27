@@ -55,14 +55,14 @@ if __name__ == "__main__":
     if args.local:
         batchsize = 2
     # load datasets
-    dataset = profile.get_dataset()
+    dataset = profile.get_dataset_config_func()
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batchsize, shuffle=False, num_workers=batchsize)
 
     # data writer
     writer = profile.get_writer(nthreads=batchsize)
 
     # build autoencoder
-    ae = profile.get_autoencoder(dataset)
+    ae = profile.get_autoencoder_config_func(dataset)
     torch.cuda.set_device(args.devices[0])
     ae = torch.nn.DataParallel(ae, device_ids=args.devices).to("cuda").eval()
 

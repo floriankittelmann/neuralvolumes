@@ -8,20 +8,23 @@ import numpy as np
 from PIL import Image
 import torch.utils.data
 from data.CameraSetups.CameraSetupInBlender2 import CameraSetupInBlender2
+from typing import List
+from typing import Callable
 
 
-class Dataset(torch.utils.data.Dataset):
+class Blender2Dataset(torch.utils.data.Dataset):
     def __init__(
             self,
-            camerafilter,
-            keyfilter,
-            framelist,
-            subsampletype=None,
-            subsamplesize=0,
-            imagemean=100.,
-            imagestd=25.,
-            scale_factor=1.0,
-            scale_focal=1.0
+            camerafilter: Callable[[str], bool],
+            keyfilter: List[str],
+            framelist: List[int],
+            fixedcameras: List[str] = ['028', '001', '019'],
+            subsampletype = None,
+            subsamplesize: int = 0,
+            imagemean: float = 100.,
+            imagestd: float = 25.,
+            scale_factor: float = 1.0,
+            scale_focal: float = 1.0
     ):
         # get options
         self.allcameras = []
@@ -51,7 +54,7 @@ class Dataset(torch.utils.data.Dataset):
                              for x in self.framelist
                              for cam in (self.cameras if len(self.cameras) > 0 else [None])]
 
-        self.fixedcameras = ['028', '001', '019']
+        self.fixedcameras = fixedcameras
         self.keyfilter = keyfilter
         self.subsampletype = subsampletype
         self.subsamplesize = subsamplesize
@@ -100,7 +103,7 @@ class Dataset(torch.utils.data.Dataset):
         frame, cam = self.framecamlist[idx]
         result = {}
         validinput = True
-        #result["cam"] = cam
+
         if "fixedcamimage" in self.keyfilter:
 
             ninput = len(self.fixedcameras)
