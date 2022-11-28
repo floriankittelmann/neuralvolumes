@@ -1,168 +1,181 @@
 # worth to have a look: https://github.com/NVIDIAGameWorks/kaolin
 
-from pymeshfix import MeshFix
+from matplotlib.colors import ListedColormap
 import pyvista as pv
 import matplotlib.pyplot as plt
 import torch
+
+from config_templates.blender2_config import DatasetConfig
+from data.Datasets.Blender2Dataset import Blender2Dataset
+from data.Profiles.Blender2Profiles import TrainBlender2
+from models.colorcals.colorcal1 import Colorcal
 from models.volsamplers.warpvoxel import VolSampler
 import numpy as np
 from models.RayMarchingHelper import RayMarchingHelper
 
 
-def plot_loosing_edges(filenameMesh: str):
-    mesh = pv.read(filenameMesh)
-    meshfix = MeshFix(mesh)
-    meshfix.plot()
+class NeuralVolumePlotter:
 
+    def __get_distributed_coords(self, batchsize: int, z_value: float, nof_points: int) -> np.ndarray:
+        list_coordinates = [(x, y, z_value)
+                            for x in np.linspace(-1.0, 1.0, nof_points)
+                            for y in np.linspace(-1.0, 1.0, nof_points)
+                            for i in range(batchsize)]
+        start_coords = np.array(list_coordinates)
+        return start_coords.reshape((batchsize, nof_points, nof_points, 3))
 
-def get_distributed_coords(batchsize: int, z_value: float, nof_points: int) -> np.ndarray:
-    list_coordinates = [(x, y, z_value)
-                        for x in np.linspace(-1.0, 1.0, nof_points)
-                        for y in np.linspace(-1.0, 1.0, nof_points)
-                        for i in range(batchsize)]
-    start_coords = np.array(list_coordinates)
-    return start_coords.reshape((batchsize, nof_points, nof_points, 3))
+    def plot_nv_from_decout(self, decout: dict):
+        nof_points = 10
+        batchsize = 4
+        start_coords = self.__get_distributed_coords(batchsize, -1.0, nof_points)
+        direction_coords = np.full((batchsize, nof_points, nof_points, 3), (0.0, 0.0, 1.0))
+        dt = 2.0 / float(nof_points)
+        t = np.ones((batchsize, nof_points, nof_points)) * -1
+        end = np.ones((batchsize, nof_points, nof_points))
+        raymarching = RayMarchingHelper(
+            torch.from_numpy(start_coords).to("cuda"),
+            torch.from_numpy(direction_coords).to("cuda"),
+            dt,
+            torch.from_numpy(t).to("cuda"),
+            torch.from_numpy(end).to("cuda"),
+            RayMarchingHelper.OUTPUT_VOLUME
+        )
+        rgb, alpha = raymarching.do_raymarching(
+            VolSampler(),
+            decout,
+            False,
+            0.0
+        )
+        print(rgb.size())
+        print(alpha.size())
+        print(rgb[0, 0, 0, 0, 0])
+        print(alpha[0, 0, 0, 0, 0])
 
+    def __prepare_template_np_plot(self, np_filename: str, density: float):
+        template = None
+        with open(np_filename, 'rb') as f:
+            template = np.load(f)
+        if template is None:
+            raise Exception("should load file")
 
+        min = -1.0
+        max = 1.0
 
-def plot_nv_from_decout(decout: dict):
-    nof_points = 10
-    batchsize = 4
-    start_coords = get_distributed_coords(batchsize, -1.0, nof_points)
-    direction_coords = np.full((batchsize, nof_points, nof_points, 3), (0.0, 0.0, 1.0))
-    dt = 2.0 / float(nof_points)
-    t = np.ones((batchsize, nof_points, nof_points)) * -1
-    end = np.ones((batchsize, nof_points, nof_points))
-    raymarching = RayMarchingHelper(
-        torch.from_numpy(start_coords).to("cuda"),
-        torch.from_numpy(direction_coords).to("cuda"),
-        dt,
-        torch.from_numpy(t).to("cuda"),
-        torch.from_numpy(end).to("cuda"),
-        RayMarchingHelper.OUTPUT_VOLUME
-    )
-    rgb, alpha = raymarching.do_raymarching(
-        VolSampler(),
-        decout,
-        False,
-        0.0
-    )
-    print(rgb.size())
-    print(alpha.size())
-    print(rgb[0, 0, 0, 0, 0])
-    print(alpha[0, 0, 0, 0, 0])
+        distribution = np.arange(min, max, (2.0 / density))
+        x, y, z = np.meshgrid(distribution, distribution, distribution)
+        pos = np.stack((x, y, z), axis=3)
+        dimension = int(density ** 3)
 
+        pos = pos.reshape((1, 1, dimension, 1, 3))
+        template_shape = template.shape
+        template = template.reshape((1, template_shape[0], template_shape[1], template_shape[2], template_shape[3]))
 
+        torch.cuda.set_device("cuda:0")
+        cur_device = torch.cuda.current_device()
 
-def plot_nv_pyvista(np_filename: str):
-    template = None
-    with open(np_filename, 'rb') as f:
-        template = np.load(f)
-    if template is None:
-        raise Exception("should load file")
+        pos = torch.from_numpy(pos)
+        pos = pos.to(cur_device)
 
-    density = 50.0
-    min = -1.0
-    max = 1.0
+        template = torch.from_numpy(template)
+        template = template.to(cur_device)
 
-    distribution = np.arange(min, max, (2.0 / density))
-    x, y, z = np.meshgrid(distribution, distribution, distribution)
-    pos = np.stack((x, y, z), axis=3)
-    dimension = int(density ** 3)
+        volsampler = VolSampler()
+        sample_rgb, sample_alpha = volsampler(pos=pos, template=template)
 
-    pos = pos.reshape((1, 1, dimension, 1, 3))
-    template_shape = template.shape
-    template = template.reshape((1, template_shape[0], template_shape[1], template_shape[2], template_shape[3]))
+        ds_config = DatasetConfig()
+        train_profile = ds_config.get_train_profile()
+        ds = train_profile.get_dataset()
+        colorcal = Colorcal(ds.get_allcameras())
+        rayrgb = colorcal(sample_rgb, sample_alpha)
 
-    torch.cuda.set_device("cuda:0")
-    cur_device = torch.cuda.current_device()
+        #sample_rgb = sample_rgb + (255. - sample_alpha) * bgcolor
+        sample_rgb = sample_rgb.cpu().numpy().reshape((dimension, 3))
+        sample_alpha = sample_alpha.cpu().numpy().reshape((dimension, 1))
+        pos = pos.cpu().numpy().reshape((dimension, 3))
 
-    pos = torch.from_numpy(pos)
-    pos = pos.to(cur_device)
+        gamma_correction_value = (2. / 1.)
+        sample_rgb = np.clip(np.clip(sample_rgb / 255., 0., 255.) ** gamma_correction_value * 255., 0., 255).astype(np.uint8)
+        print(np.max(sample_rgb))
+        exit()
+        sample_alpha = np.clip(np.clip(sample_alpha / 255., 0., 255.) * 255., 0., 255) / 255.
+        """gamma_correction_value = (2. / 1.)
+        sample_rgb = (sample_rgb * 255) ** gamma_correction_value"""
+        """sample_rgb = sample_rgb / np.max(sample_rgb) * 255.0
+        sample_alpha = sample_alpha / np.max(sample_alpha) * 255.0"""
 
-    template = torch.from_numpy(template)
-    template = template.to(cur_device)
+        sample_rgba = np.zeros((dimension, 4))
+        sample_rgba[:, 0:3] = sample_rgb
+        sample_rgba[:, 3] = sample_alpha[:, 0]
+        sample_rgba = sample_rgba.reshape((int(density), int(density), int(density), 4))
+        return pos, sample_rgba, dimension
 
-    volsampler = VolSampler()
-    sample_rgb, sample_alpha = volsampler(pos=pos, template=template)
+    def matplotlib_2d_from_template_np(self, np_filename: str):
+        density = 50.0
+        pos, sample_rgba, dimension = self.__prepare_template_np_plot(np_filename, density)
+        plt.imshow(sample_rgba[:, :, int(density / 2)].reshape((int(density), int(density), 4)), vmin=0, vmax=255)
+        plt.show()
 
-    bgcolor = np.zeros((1, 3, 1, int(density ** 3), 1))  # black bg color
-    bgcolor = torch.from_numpy(bgcolor).to("cuda")
+    def matplotlib_3d_from_template_np(self, np_filename: str):
+        density = 20.0
+        pos, sample_rgba, dimension = self.__prepare_template_np_plot(np_filename, density)
 
-    sample_rgb = sample_rgb + (1. - sample_alpha) * bgcolor
-    sample_rgb = sample_rgb.cpu().numpy().reshape((dimension, 3))
-    sample_alpha = sample_alpha.cpu().numpy().reshape((dimension, 1))
-    pos = pos.cpu().numpy().reshape((dimension, 3))
+        shape_plot = (int(density) + 1, int(density) + 1, int(density) + 1)
+        x, y, z = (np.indices(shape_plot) / density) * 2.0 - 1.0
+        all_test = np.full((int(density), int(density), int(density)), True)
 
-    gamma_correction_value = (2. / 1.)
-    sample_rgb = (np.clip(sample_rgb, 0., 255.) / 255.0) ** gamma_correction_value
-    sample_alpha = np.clip(sample_alpha, 0., 255.) / 255.
+        ax = plt.figure().add_subplot(projection='3d')
+        ax.voxels(x, y, z, all_test,
+                  facecolors=sample_rgba / 255.0,
+                  edgecolors=[0.0, 0.0, 0.0, 0.0],
+                  linewidth=0.0)
+        plt.show()
 
-    # print(sample_rgb.shape) # rgb values per voxel -> (dimension, 3)
-    # print(sample_alpha.shape) # alpha values per voxel -> (dimension, 1)
-    # print(pos.shape) # position xyz values per voxel -> (dimension, 3)
+    def pyvista_3d_from_template_np(self, np_filename: str):
+        density = 128.0
+        pos, sample_rgba, dimension = self.__prepare_template_np_plot(np_filename, density)
+        min, max = -1.0, 1.0
+        x = np.arange(min, max, (2.0 / density))
+        y = np.arange(min, max, (2.0 / density))
+        z = np.arange(min, max, (2.0 / density))
+        x, y, z = np.meshgrid(x, y, z)
 
-    shape_plot = (int(density) + 1, int(density) + 1, int(density) + 1)
-    x, y, z = (np.indices(shape_plot) / density) * 2.0 - 1.0
+        grid = pv.StructuredGrid(x, y, z)
+        plotter = pv.Plotter()
+        plotter.add_points(
+            grid.points,
+            scalars=sample_rgba[:, :, :, 0:4].reshape((sample_rgba.shape[0]**3, 4)),
+            rgb=True
+        )
+        plotter.show()
 
-    rgb_check = np.sum(sample_rgb, axis=1) > 0.0
-    alpha_check = (sample_alpha > 0.0).reshape((dimension, 1))
-    rgb_check = rgb_check.reshape(alpha_check.shape)
-    all_check = np.logical_and(rgb_check, alpha_check)
-    all_test = all_check.reshape((int(density), int(density), int(density)))
+        #pv.plot(grid.points, cmap=ListedColormap(cmap), scalars=values)
 
-    cmap = np.zeros((dimension, 4))
-    cmap[:, 0:3] = sample_rgb
-    cmap[:, 3] = sample_alpha[:, 0]
-    # cmap = np.array([(r, g, b, a) for r, g, b, a in cmap])
-    # print(cmap.shape)
-    cmap = cmap.reshape((int(density), int(density), int(density), 4))
+    def plot_stl_pyvista(self, filenameMesh: str):
+        mesh = pv.read(filenameMesh)
 
-    ax = plt.figure().add_subplot(projection='3d')
-    ax.voxels(x, y, z, all_test,
-              facecolors=cmap,
-              edgecolors=[0.0, 0.0, 0.0, 0.0],
-              linewidth=0.0)
-    plt.show()
+        density = mesh.length / 100
+        x_min, x_max, y_min, y_max, z_min, z_max = mesh.bounds
+        x = np.arange(x_min, x_max, density)
+        y = np.arange(y_min, y_max, density)
+        z = np.arange(z_min, z_max, density)
+        print(x.shape)
+        print(x[:4])
+        x, y, z = np.meshgrid(x, y, z)
+        print(x.shape)
+        exit()
 
+        # Create unstructured grid from the structured grid
+        grid = pv.StructuredGrid(x, y, z)
+        ugrid = pv.UnstructuredGrid(grid)
 
-def plot_stl_pyvista(filenameMesh: str):
-    mesh = pv.read(filenameMesh)
-
-    density = mesh.length / 100
-    x_min, x_max, y_min, y_max, z_min, z_max = mesh.bounds
-    x = np.arange(x_min, x_max, density)
-    y = np.arange(y_min, y_max, density)
-    z = np.arange(z_min, z_max, density)
-    print(x.shape)
-    print(x[:4])
-    x, y, z = np.meshgrid(x, y, z)
-    print(x.shape)
-    exit()
-
-    # Create unstructured grid from the structured grid
-    grid = pv.StructuredGrid(x, y, z)
-    ugrid = pv.UnstructuredGrid(grid)
-
-    # get part of the mesh within the mesh's bounding surface.
-    selection = ugrid.select_enclosed_points(mesh.extract_surface(), tolerance=0.0, check_surface=False)
-    mask = selection.point_data['SelectedPoints'].view(bool)
-    mask = mask.reshape(x.shape)
-    pv.plot(grid.points, cmap=["#00000000", "#000000FF"], scalars=mask)
+        # get part of the mesh within the mesh's bounding surface.
+        selection = ugrid.select_enclosed_points(mesh.extract_surface(), tolerance=0.0, check_surface=False)
+        mask = selection.point_data['SelectedPoints'].view(bool)
+        mask = mask.reshape(x.shape)
+        pv.plot(grid.points, cmap=["#00000000", "#000000FF"], scalars=mask)
 
 
 if __name__ == "__main__":
-    # plot voxelized stl file with pyvista
-    # filename = "C:\\Users\\Flori\\Desktop\\BaseMesh_Anim.stl"
-    # plot_stl_pyvista(filename)
-
-    # plot_nv_from_decout()
-
-    # plot neural volumes from np file
+    plotter = NeuralVolumePlotter()
     filename = "test.npy"
-    plot_nv_pyvista(filename)
-
-    # plot voxel test
-    # voxel_plot_test()
-
-    # plot_sphere()
+    plotter.pyvista_3d_from_template_np(filename)

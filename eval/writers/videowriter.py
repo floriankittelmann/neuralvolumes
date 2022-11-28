@@ -8,11 +8,8 @@ import multiprocessing
 import os
 import shutil
 import subprocess
-
 import numpy as np
-
 import matplotlib.cm as cm
-
 from PIL import Image
 
 
