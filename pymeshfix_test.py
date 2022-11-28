@@ -82,32 +82,15 @@ class NeuralVolumePlotter:
         volsampler = VolSampler()
         sample_rgb, sample_alpha = volsampler(pos=pos, template=template)
 
-        ds_config = DatasetConfig()
-        train_profile = ds_config.get_train_profile()
-        ds = train_profile.get_dataset()
-        colorcal = Colorcal(ds.get_allcameras())
-        rayrgb = colorcal(sample_rgb, sample_alpha)
-
-        #sample_rgb = sample_rgb + (255. - sample_alpha) * bgcolor
         sample_rgb = sample_rgb.cpu().numpy().reshape((dimension, 3))
         sample_alpha = sample_alpha.cpu().numpy().reshape((dimension, 1))
         pos = pos.cpu().numpy().reshape((dimension, 3))
-
-        gamma_correction_value = (2. / 1.)
-        sample_rgb = np.clip(np.clip(sample_rgb / 255., 0., 255.) ** gamma_correction_value * 255., 0., 255).astype(np.uint8)
-        print(np.max(sample_rgb))
-        exit()
-        sample_alpha = np.clip(np.clip(sample_alpha / 255., 0., 255.) * 255., 0., 255) / 255.
-        """gamma_correction_value = (2. / 1.)
-        sample_rgb = (sample_rgb * 255) ** gamma_correction_value"""
-        """sample_rgb = sample_rgb / np.max(sample_rgb) * 255.0
-        sample_alpha = sample_alpha / np.max(sample_alpha) * 255.0"""
 
         sample_rgba = np.zeros((dimension, 4))
         sample_rgba[:, 0:3] = sample_rgb
         sample_rgba[:, 3] = sample_alpha[:, 0]
         sample_rgba = sample_rgba.reshape((int(density), int(density), int(density), 4))
-        return pos, sample_rgba, dimension
+        return pos, sample_rgba.astype(float), dimension
 
     def matplotlib_2d_from_template_np(self, np_filename: str):
         density = 50.0
@@ -130,7 +113,7 @@ class NeuralVolumePlotter:
                   linewidth=0.0)
         plt.show()
 
-    def pyvista_3d_from_template_np(self, np_filename: str):
+    def pyvista_3d_from_template_np(self, np_filename: str, overwrite_color_to_black: bool = False):
         density = 128.0
         pos, sample_rgba, dimension = self.__prepare_template_np_plot(np_filename, density)
         min, max = -1.0, 1.0
@@ -139,16 +122,16 @@ class NeuralVolumePlotter:
         z = np.arange(min, max, (2.0 / density))
         x, y, z = np.meshgrid(x, y, z)
 
+        if overwrite_color_to_black:
+            sample_rgba[:, :, :, 0:3] = np.zeros(sample_rgba[:, :, :, 0:3].shape)
+
+        sample_rgba[:, :, :, 3] = sample_rgba[:, :, :, 3] / 255.
         grid = pv.StructuredGrid(x, y, z)
         plotter = pv.Plotter()
-        plotter.add_points(
-            grid.points,
-            scalars=sample_rgba[:, :, :, 0:4].reshape((sample_rgba.shape[0]**3, 4)),
-            rgb=True
-        )
+        plotter.add_points(grid.points,
+                           scalars=sample_rgba[:, :, :, 0:4].reshape((sample_rgba.shape[0] ** 3, 4)),
+                           rgb=True)
         plotter.show()
-
-        #pv.plot(grid.points, cmap=ListedColormap(cmap), scalars=values)
 
     def plot_stl_pyvista(self, filenameMesh: str):
         mesh = pv.read(filenameMesh)
@@ -178,4 +161,4 @@ class NeuralVolumePlotter:
 if __name__ == "__main__":
     plotter = NeuralVolumePlotter()
     filename = "test.npy"
-    plotter.pyvista_3d_from_template_np(filename)
+    plotter.pyvista_3d_from_template_np(filename, True)
