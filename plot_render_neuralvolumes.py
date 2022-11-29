@@ -19,6 +19,7 @@ if __name__ == "__main__":
 
     import_config_util = ImportConfigUtil()
     experconfig = import_config_util.import_module(args.experconfig)
+
     ds_config: DatasetConfig = experconfig.DatasetConfig()
     profile = ds_config.get_render_profile()
 
