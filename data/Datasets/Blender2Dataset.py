@@ -54,7 +54,8 @@ class Blender2Dataset(torch.utils.data.Dataset):
         self.framecamlist = [(x, cam)
                              for x in self.framelist
                              for cam in (self.cameras if len(self.cameras) > 0 else [None])]
-
+        print(self.framecamlist)
+        exit()
         self.fixedcameras = fixedcameras
         self.keyfilter = keyfilter
         self.subsampletype = subsampletype
@@ -104,7 +105,10 @@ class Blender2Dataset(torch.utils.data.Dataset):
         frame, cam = self.framecamlist[idx]
         result = {}
         validinput = True
-
+        print(frame)
+        print(cam)
+        result["frame"] = frame
+        result["cam"] = cam
         if "fixedcamimage" in self.keyfilter:
 
             ninput = len(self.fixedcameras)

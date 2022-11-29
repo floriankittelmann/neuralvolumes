@@ -4,30 +4,21 @@ from matplotlib.colors import ListedColormap
 import pyvista as pv
 import matplotlib.pyplot as plt
 import torch
-
-from config_templates.blender2_config import DatasetConfig
-from data.Datasets.Blender2Dataset import Blender2Dataset
-from data.Profiles.Blender2Profiles import TrainBlender2
-from models.colorcals.colorcal1 import Colorcal
 from models.volsamplers.warpvoxel import VolSampler
 import numpy as np
 from models.RayMarchingHelper import RayMarchingHelper
+from utils.RenderUtils import get_distributed_coords
 
 
 class NeuralVolumePlotter:
 
-    def __get_distributed_coords(self, batchsize: int, z_value: float, nof_points: int) -> np.ndarray:
-        list_coordinates = [(x, y, z_value)
-                            for x in np.linspace(-1.0, 1.0, nof_points)
-                            for y in np.linspace(-1.0, 1.0, nof_points)
-                            for i in range(batchsize)]
-        start_coords = np.array(list_coordinates)
-        return start_coords.reshape((batchsize, nof_points, nof_points, 3))
+    def __init__(self):
+        self.plotter = pv.Plotter()
 
     def plot_nv_from_decout(self, decout: dict):
         nof_points = 10
         batchsize = 4
-        start_coords = self.__get_distributed_coords(batchsize, -1.0, nof_points)
+        start_coords = get_distributed_coords(batchsize=batchsize, fixed_value=-1.0, nof_points=nof_points, fixed_axis=2)
         direction_coords = np.full((batchsize, nof_points, nof_points, 3), (0.0, 0.0, 1.0))
         dt = 2.0 / float(nof_points)
         t = np.ones((batchsize, nof_points, nof_points)) * -1
@@ -127,11 +118,9 @@ class NeuralVolumePlotter:
 
         sample_rgba[:, :, :, 3] = sample_rgba[:, :, :, 3] / 255.
         grid = pv.StructuredGrid(x, y, z)
-        plotter = pv.Plotter()
-        plotter.add_points(grid.points,
-                           scalars=sample_rgba[:, :, :, 0:4].reshape((sample_rgba.shape[0] ** 3, 4)),
-                           rgb=True)
-        plotter.show()
+        self.plotter.add_points(grid.points,
+                                scalars=sample_rgba[:, :, :, 0:4].reshape((sample_rgba.shape[0] ** 3, 4)),
+                                rgb=True)
 
     def plot_stl_pyvista(self, filenameMesh: str):
         mesh = pv.read(filenameMesh)
@@ -141,24 +130,28 @@ class NeuralVolumePlotter:
         x = np.arange(x_min, x_max, density)
         y = np.arange(y_min, y_max, density)
         z = np.arange(z_min, z_max, density)
-        print(x.shape)
-        print(x[:4])
         x, y, z = np.meshgrid(x, y, z)
-        print(x.shape)
-        exit()
 
         # Create unstructured grid from the structured grid
         grid = pv.StructuredGrid(x, y, z)
         ugrid = pv.UnstructuredGrid(grid)
 
+        grid = pv.StructuredGrid(x / 100., y / 100., z / 100.)
         # get part of the mesh within the mesh's bounding surface.
         selection = ugrid.select_enclosed_points(mesh.extract_surface(), tolerance=0.0, check_surface=False)
         mask = selection.point_data['SelectedPoints'].view(bool)
         mask = mask.reshape(x.shape)
-        pv.plot(grid.points, cmap=["#00000000", "#000000FF"], scalars=mask)
+        self.plotter.add_points(grid.points, cmap=["#00000000", "#ff00004D"], scalars=mask)
+
+    def show_plot(self):
+        self.plotter.show_axes_all()
+        self.plotter.show()
 
 
 if __name__ == "__main__":
     plotter = NeuralVolumePlotter()
     filename = "test.npy"
     plotter.pyvista_3d_from_template_np(filename, True)
+    path_stl = "C:\\Users\\Flori\\Desktop\\Test-Export-Blender\\test0.stl"
+    #plotter.plot_stl_pyvista(path_stl)
+    plotter.show_plot()

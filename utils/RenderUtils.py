@@ -3,8 +3,31 @@ import os
 import sys
 import torch
 import time
+import numpy as np
 from utils.EnvUtils import EnvUtils
 from torch.utils.data import DataLoader
+
+
+def get_distributed_coords(batchsize: int, fixed_value: float, nof_points: int, fixed_axis: int) -> np.ndarray:
+    if fixed_axis == 0:
+        list_coordinates = [(fixed_value, y, z)
+                            for y in np.linspace(-1.0, 1.0, nof_points)
+                            for z in np.linspace(-1.0, 1.0, nof_points)
+                            for i in range(batchsize)]
+    elif fixed_axis == 1:
+        list_coordinates = [(x, fixed_value, z)
+                            for x in np.linspace(-1.0, 1.0, nof_points)
+                            for z in np.linspace(-1.0, 1.0, nof_points)
+                            for i in range(batchsize)]
+    elif fixed_axis == 2:
+        list_coordinates = [(x, y, fixed_value)
+                            for x in np.linspace(-1.0, 1.0, nof_points)
+                            for y in np.linspace(-1.0, 1.0, nof_points)
+                            for i in range(batchsize)]
+    else:
+        raise Exception("parameter fixed axis should be the value of either 0, 1 or 2")
+    start_coords = np.array(list_coordinates)
+    return start_coords.reshape((batchsize, nof_points, nof_points, 3))
 
 
 class RenderUtils:

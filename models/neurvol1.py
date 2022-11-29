@@ -7,7 +7,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.RayMarchingHelper import init_with_camera_position
+from models.RayMarchingHelper import init_with_camera_position, init_section_view
 from models.colorcals.colorcal1 import Colorcal
 from models.decoders.voxel1 import Decoder
 from models.encoders.mvconv1 import Encoder

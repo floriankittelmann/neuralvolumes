@@ -1,6 +1,9 @@
 from collections.abc import Iterator
+
+import numpy as np
 import torch
 from models.volsamplers.warpvoxel import VolSampler
+from utils.RenderUtils import get_distributed_coords
 
 
 class RayMarchingHelper:
@@ -37,16 +40,8 @@ class RayMarchingHelper:
             contrib = ((rayalpha + sample_alpha[:, :, 0, :, :] * step[:, None, :, :]).clamp(
                 max=1.) - rayalpha) * validf[:, None, :, :]
 
-            if self.mode == self.OUTPUT_IMG:
-                rayrgb = rayrgb + sample_rgb[:, :, 0, :, :] * contrib
-                rayalpha = rayalpha + contrib
-            else:
-                rayrgb_tmp = sample_rgb[:, :, 0, :, :] * contrib
-                rayalpha_tmp = contrib
-
-                print(rayrgb.size())
-                print(rayalpha.size())
-                exit()
+            rayrgb = rayrgb + sample_rgb[:, :, 0, :, :] * contrib
+            rayalpha = rayalpha + contrib
 
             self.__make_step_for_raypos(step)
         return rayrgb, rayalpha
@@ -68,6 +63,22 @@ class RayMarchingHelper:
             done, step = self.__calculate_done(done, stepjitter)
             self.__make_step_for_raypos(step)
             yield self.raypos
+
+
+def init_section_view(batchsize: int) -> RayMarchingHelper:
+    nof_points = 1080
+    dt = 0.1 #2.0 / float(nof_points)
+    raypos = get_distributed_coords(batchsize=batchsize, fixed_value=-1.0, nof_points=nof_points, fixed_axis=1)
+    raydir = np.full((batchsize, nof_points, nof_points, 3), (0.0, 1.0, 0.0))
+    t = np.zeros((batchsize, nof_points, nof_points))
+    tmax = np.ones((batchsize, nof_points, nof_points))
+    return RayMarchingHelper(
+        torch.from_numpy(raypos).to("cuda"),
+        torch.from_numpy(raydir).to("cuda"),
+        dt,
+        torch.from_numpy(t).to("cuda"),
+        torch.from_numpy(tmax).to("cuda")
+    )
 
 
 def init_with_camera_position(pixelcoords, princpt, focal, camrot, campos, dt) -> RayMarchingHelper:
