@@ -7,12 +7,12 @@
 import numpy as np
 from PIL import Image
 import torch.utils.data
-from data.CameraSetups.CameraSetupInBlender2 import CameraSetupInBlender2
+from data.CameraSetups.CameraSetupInBlender2Reduced import CameraSetupInBlender2
 from typing import List
 from typing import Callable
 
 
-class Blender2Dataset(torch.utils.data.Dataset):
+class Blender2ReducedDataset(torch.utils.data.Dataset):
     def __init__(
             self,
             camerafilter: Callable[[str], bool],
@@ -66,7 +66,7 @@ class Blender2Dataset(torch.utils.data.Dataset):
             self.bg = {}
             for i, cam in enumerate(self.cameras):
                 try:
-                    imagepath = "experiments/blender2/data/bg.jpg"
+                    imagepath = "experiments/blender2reduced/data/bg.jpg"
                     image = np.asarray(Image.open(imagepath), dtype=np.uint8).transpose((2, 0, 1)).astype(np.float32)
                     self.bg[cam] = image
                 except:
@@ -109,7 +109,7 @@ class Blender2Dataset(torch.utils.data.Dataset):
             fixedcamimage = np.zeros((3 * ninput, 512, 334), dtype=np.float32)
             for i in range(ninput):
                 imagepath = (
-                    "experiments/blender2/data/{}/cam{}_frame{:04}.jpg"
+                    "experiments/blender2reduced/data/{}/cam{}_frame{:04}.jpg"
                         .format(self.fixedcameras[i], self.fixedcameras[i], int(frame)))
                 image = np.asarray(Image.open(imagepath), dtype=np.uint8)[::2, ::2, :].transpose((2, 0, 1)).astype(
                     np.float32)
@@ -137,7 +137,7 @@ class Blender2Dataset(torch.utils.data.Dataset):
             if "image" in self.keyfilter:
                 # image
                 imagepath = (
-                    "experiments/blender2/data/{}/cam{}_frame{:04}.jpg"
+                    "experiments/blender2reduced/data/{}/cam{}_frame{:04}.jpg"
                         .format(cam, cam, int(frame)))
                 image = np.asarray(Image.open(imagepath), dtype=np.uint8).transpose((2, 0, 1)).astype(np.float32)
                 height, width = image.shape[1:3]

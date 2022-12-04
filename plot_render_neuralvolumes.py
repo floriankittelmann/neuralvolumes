@@ -58,13 +58,12 @@ if __name__ == "__main__":
             # forward
             output = ae(iternum, [], **{k: x.to("cuda") for k, x in data.items()}, **profile.get_ae_args())
 
-            print(type(data["frame"]))
-            print(type(data["cam"]))
-            exit()
-            np_filename = "frame{}_cam{}.npy".format(str(data["frame"]), str(data["cam"]))
-            with open('test.npy', 'wb') as f:
-                np.save(f, np.array([1, 2]))
-                np.save(f, np.array([1, 3]))
+            np_filename = "frame{}.npy".format(iternum)
+            path_np_file = os.path.join(outpath_np_folder, np_filename)
+            template_tensor: torch.Tensor = output['decout']['template']
+            template_np = template_tensor.cpu().numpy()
+            with open(path_np_file, 'wb') as f:
+                np.save(f, template_np)
 
             if save_picture_from_side:
                 rayrgb = output["irgbrec"]

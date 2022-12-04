@@ -118,6 +118,8 @@ class TrainUtils:
         if env_utils.is_local_env():
             nof_workers = 1
             batch_size_training = 3
+        print("Train-Batchsize: {}".format(batch_size_training))
+        print("Nof-Workers: {}".format(nof_workers))
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size_training, shuffle=True, drop_last=True,
                                                  num_workers=nof_workers)
         print("Dataset instantiated ({:.2f} s)".format(time.time() - starttime))

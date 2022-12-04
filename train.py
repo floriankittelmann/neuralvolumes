@@ -82,7 +82,7 @@ if __name__ == "__main__":
                   ", ".join(["{} = {:.5f}".format(k, float(
                       torch.sum(v[0]) / torch.sum(v[1]) if isinstance(v, tuple) else torch.mean(v)))
                              for k, v in output["losses"].items()]), end="")
-            if iternum % 10 == 0:
+            if iternum % 5 == 0:
                 endtime = time.time()
                 ips = 10. / (endtime - starttime)
                 print(", iter/sec = {:.2f}".format(ips))

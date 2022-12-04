@@ -1,9 +1,13 @@
 # worth to have a look: https://github.com/NVIDIAGameWorks/kaolin
+import os
+from typing import Callable
 
 from matplotlib.colors import ListedColormap
 import pyvista as pv
 import matplotlib.pyplot as plt
 import torch
+from pyvista import Plotter
+
 from models.volsamplers.warpvoxel import VolSampler
 import numpy as np
 from models.RayMarchingHelper import RayMarchingHelper
@@ -56,10 +60,9 @@ class NeuralVolumePlotter:
         x, y, z = np.meshgrid(distribution, distribution, distribution)
         pos = np.stack((x, y, z), axis=3)
         dimension = int(density ** 3)
-
-        pos = pos.reshape((1, 1, dimension, 1, 3))
-        template_shape = template.shape
-        template = template.reshape((1, template_shape[0], template_shape[1], template_shape[2], template_shape[3]))
+        batchsize = template.shape[0]
+        pos = np.array([pos for i in range(batchsize)])
+        pos = pos.reshape((batchsize, 1, dimension, 1, 3))
 
         torch.cuda.set_device("cuda:0")
         cur_device = torch.cuda.current_device()
@@ -73,14 +76,14 @@ class NeuralVolumePlotter:
         volsampler = VolSampler()
         sample_rgb, sample_alpha = volsampler(pos=pos, template=template)
 
-        sample_rgb = sample_rgb.cpu().numpy().reshape((dimension, 3))
-        sample_alpha = sample_alpha.cpu().numpy().reshape((dimension, 1))
-        pos = pos.cpu().numpy().reshape((dimension, 3))
+        sample_rgb = sample_rgb.cpu().numpy().reshape((batchsize, dimension, 3))
+        sample_alpha = sample_alpha.cpu().numpy().reshape((batchsize, dimension, 1))
+        pos = pos.cpu().numpy().reshape((batchsize, dimension, 3))
 
-        sample_rgba = np.zeros((dimension, 4))
-        sample_rgba[:, 0:3] = sample_rgb
-        sample_rgba[:, 3] = sample_alpha[:, 0]
-        sample_rgba = sample_rgba.reshape((int(density), int(density), int(density), 4))
+        sample_rgba = np.zeros((batchsize, dimension, 4))
+        sample_rgba[:, :, 0:3] = sample_rgb
+        sample_rgba[:, :, 3] = sample_alpha[:, :, 0]
+        sample_rgba = sample_rgba.reshape((batchsize, int(density), int(density), int(density), 4))
         return pos, sample_rgba.astype(float), dimension
 
     def matplotlib_2d_from_template_np(self, np_filename: str):
@@ -104,23 +107,43 @@ class NeuralVolumePlotter:
                   linewidth=0.0)
         plt.show()
 
-    def pyvista_3d_from_template_np(self, np_filename: str, overwrite_color_to_black: bool = False):
-        density = 128.0
-        pos, sample_rgba, dimension = self.__prepare_template_np_plot(np_filename, density)
-        min, max = -1.0, 1.0
-        x = np.arange(min, max, (2.0 / density))
-        y = np.arange(min, max, (2.0 / density))
-        z = np.arange(min, max, (2.0 / density))
-        x, y, z = np.meshgrid(x, y, z)
+    def pyvista_3d_from_template_np(
+            self,
+            outputfolder: str,
+            overwrite_color_to_black: bool = False,
+            nof_frames: int = 500
+    ):
+        plotter_test: Plotter = pv.Plotter()
+        prepare_template: Callable = self.__prepare_template_np_plot
+        density: float = 128.0
 
-        if overwrite_color_to_black:
-            sample_rgba[:, :, :, 0:3] = np.zeros(sample_rgba[:, :, :, 0:3].shape)
+        def create_points(value):
+            plotter_test.clear_actors()
+            res: int = int(value)
+            np_filename: str = os.path.join(outputfolder, "frame{}.npy".format(res))
+            pos, sample_rgba, dimension = prepare_template(np_filename, density)
+            min, max = -1.0, 1.0
+            x = np.arange(min, max, (2.0 / density))
+            y = np.arange(min, max, (2.0 / density))
+            z = np.arange(min, max, (2.0 / density))
+            x, y, z = np.meshgrid(x, y, z)
 
-        sample_rgba[:, :, :, 3] = sample_rgba[:, :, :, 3] / 255.
-        grid = pv.StructuredGrid(x, y, z)
-        self.plotter.add_points(grid.points,
-                                scalars=sample_rgba[:, :, :, 0:4].reshape((sample_rgba.shape[0] ** 3, 4)),
-                                rgb=True)
+            if overwrite_color_to_black:
+                sample_rgba[:, :, :, :, 0:3] = np.zeros(sample_rgba[:, :, :, :, 0:3].shape)
+
+            sample_rgba[:, :, :, :, 3] = sample_rgba[:, :, :, :, 3] / 255.
+            grid = pv.StructuredGrid(x, y, z)
+
+            #batchsize = sample_rgba.shape[0]
+            #for i in range(batchsize):
+            sample_rgb = sample_rgba[0, :, :, :, 0:4].reshape((dimension, 4))
+            actor = plotter_test.add_points(grid.points, scalars=sample_rgb, rgb=True)
+            return
+
+        plotter_test.add_slider_widget(callback=create_points, value=0, rng=[0, 165], title='Time')
+        plotter_test.show_axes_all()
+        plotter_test.show()
+
 
     def plot_stl_pyvista(self, filenameMesh: str):
         mesh = pv.read(filenameMesh)
@@ -150,8 +173,8 @@ class NeuralVolumePlotter:
 
 if __name__ == "__main__":
     plotter = NeuralVolumePlotter()
-    filename = "test.npy"
+    filename = "experiments/blender2/20221101_104411_finetune2_campos/templates"
     plotter.pyvista_3d_from_template_np(filename, True)
     path_stl = "C:\\Users\\Flori\\Desktop\\Test-Export-Blender\\test0.stl"
     #plotter.plot_stl_pyvista(path_stl)
-    plotter.show_plot()
+    #plotter.show_plot()
