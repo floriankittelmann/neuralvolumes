@@ -118,6 +118,8 @@ if __name__ == "__main__":
                 torch.save(ae.module.state_dict(), "{}/aeparams.pt".format(outpath))
 
             iternum += 1
+            if iternum >= 55:
+                exit()
 
         if iternum >= trainprofile.get_maxiter():
             break
