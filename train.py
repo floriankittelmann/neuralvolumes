@@ -118,6 +118,10 @@ if __name__ == "__main__":
                 torch.save(ae.module.state_dict(), "{}/aeparams.pt".format(outpath))
 
             iternum += 1
+            torch.cuda.empty_cache()
+            del loss
+            del output
+            gc.collect()
             if iternum >= 55:
                 exit()
 
