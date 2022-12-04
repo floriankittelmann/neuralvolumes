@@ -100,7 +100,7 @@ class TrainUtils:
         # build dataset & testing dataset
         starttime = time.time()
         testdataset = progressprof.get_dataset()
-        batch_size_test = progressprof.get_batchsize
+        batch_size_test = progressprof.get_batchsize()
         if env_utils.is_local_env():
             batch_size_test = 3
         if len(testdataset) <= 0:
