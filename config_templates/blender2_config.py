@@ -50,7 +50,7 @@ class DatasetConfig:
         return TrainBlender2(
             get_autoencoder_func=self.get_autoencoder_config_func,
             get_dataset_func=self.get_dataset_config_func,
-            batchsize=32,
+            batchsize=16,
             maxiter=500000,
             lr=0.0001
         )
