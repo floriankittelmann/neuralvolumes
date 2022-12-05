@@ -73,19 +73,17 @@ class Autoencoder(nn.Module):
         result["losses"].update(decout["losses"])
         result["decout"] = decout
 
-        start_time = time.time()
         raymarching = init_with_camera_position(pixelcoords, princpt, focal, camrot, campos, self.dt)
         rayrgb, rayalpha = raymarching.do_raymarching(self.volsampler, decout, viewtemplate, self.stepjitter)
-        print("needed time for raymarching: {}".format(time.time() - start_time))
 
         if image is not None:
             imagesize = torch.tensor(image.size()[3:1:-1], dtype=torch.float32, device=pixelcoords.device)
             samplecoords = pixelcoords * 2. / (imagesize[None, None, None, :] - 1.) - 1.
 
+
         # color correction / bg
         if camindex is not None:
             rayrgb = self.colorcal(rayrgb, camindex)
-
             if pixelcoords.size()[1:3] != image.size()[2:4]:
                 bg = F.grid_sample(
                     torch.stack([self.bg[self.allcameras[camindex[i].item()]] for i in range(campos.size(0))], dim=0),
@@ -95,7 +93,6 @@ class Autoencoder(nn.Module):
 
             rayrgb = rayrgb + (1. - rayalpha) * bg.clamp(min=0.)
 
-        start_time = time.time()
         if "irgbrec" in outputlist:
             result["irgbrec"] = rayrgb
         if "ialpharec" in outputlist:
@@ -133,5 +130,4 @@ class Autoencoder(nn.Module):
                 irgbmse_weight = torch.sum(weight.view(weight.size(0), -1), dim=-1)
 
                 result["losses"]["irgbmse"] = (irgbmse, irgbmse_weight)
-        print("needed time for loss calc in neurvol1: {}".format(time.time() - start_time))
         return result

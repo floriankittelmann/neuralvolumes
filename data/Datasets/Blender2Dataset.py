@@ -151,7 +151,10 @@ class Blender2Dataset(torch.utils.data.Dataset):
                 imagepath = (
                     "experiments/blender2/data/{}/cam{}_frame{:04}.jpg"
                         .format(cam, cam, int(frame)))
-                image = np.asarray(Image.open(imagepath), dtype=np.uint8).transpose((2, 0, 1)).astype(np.float32)
+                resize_param_loss_imgs = 1
+                image = np.asarray(Image.open(imagepath), dtype=np.uint8)
+                image = image[::resize_param_loss_imgs, ::resize_param_loss_imgs, :].transpose((2, 0, 1))\
+                    .astype(np.float32)
                 height, width = image.shape[1:3]
                 valid = np.float32(1.0) if np.sum(image) != 0 else np.float32(0.)
                 result["image"] = image

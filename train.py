@@ -37,7 +37,8 @@ if __name__ == "__main__":
 
     # train
     starttime = time.time()
-    evalpoints = np.geomspace(1., trainprofile.get_maxiter(), 100).astype(np.int32)
+    #evalpoints = np.geomspace(1., trainprofile.get_maxiter(), 100).astype(np.int32)
+    evalpoints = np.linspace(100, trainprofile.get_maxiter(), (trainprofile.get_maxiter() - 100) // 100)
     iternum = log.iternum
     prevloss = np.inf
 
@@ -64,12 +65,12 @@ if __name__ == "__main__":
             # forward
             output = ae(iternum, lossweights.keys(), **{k: x.to("cuda") for k, x in data.items()})
 
-            start_time = time.time()
             # compute final loss
             loss = sum([
                 lossweights[k] * (torch.sum(v[0]) / torch.sum(v[1]) if isinstance(v, tuple) else torch.mean(v))
                 for k, v in output["losses"].items()])
 
+            start_time = time.time()
             dict_wandb = {"loss": float(loss.item()), "step": iternum}
             for k, v in output["losses"].items():
                 if isinstance(v, tuple):
@@ -88,8 +89,6 @@ if __name__ == "__main__":
                 ips = 10. / (endtime - starttime)
                 print(", iter/sec = {:.2f}".format(ips))
                 starttime = time.time()
-            else:
-                print()
 
             # compute evaluation output
             if iternum in evalpoints:
@@ -97,9 +96,9 @@ if __name__ == "__main__":
                     testoutput = ae(iternum, [], **{k: x.to("cuda") for k, x in testbatch.items()},
                                     **progressprof.get_ae_args())
 
+
                 b = data["campos"].size(0)
                 writer.batch(iternum, iternum * trainprofile.get_batchsize() + torch.arange(b), outpath, **testbatch, **testoutput)
-            print("needed time for loss calc in train.py: {}".format(time.time() - start_time))
 
             # update parameters
             aeoptim.zero_grad()

@@ -87,7 +87,6 @@ def init_with_camera_position(pixelcoords, princpt, focal, camrot, campos, dt) -
         axis y: values from 0.0 - 666.0
     """
     # NHWC
-
     # Calculates ratio between image width and sensor width (unit doesn't matter because is a ratio)
     raydir = (pixelcoords - princpt[:, None, None, :]) / focal[:, None, None, :]
 
