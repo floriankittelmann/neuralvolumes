@@ -13,11 +13,16 @@ from typing import Callable
 
 
 class Blender2Dataset(torch.utils.data.Dataset):
+
+    MODE_512x334_ENCODER_INPUT_RES = 1
+    MODE_256x167_ENCODER_INPUT_RES = 2
+
     def __init__(
             self,
             camerafilter: Callable[[str], bool],
             keyfilter: List[str],
             framelist: List[int],
+            encoder_input_imgsize: int,
             fixedcameras: List[str] = ['028', '001', '019'],
             subsampletype=None,
             subsamplesize: int = 0,
@@ -60,6 +65,7 @@ class Blender2Dataset(torch.utils.data.Dataset):
         self.subsamplesize = subsamplesize
         self.imagemean = imagemean
         self.imagestd = imagestd
+        self.encoder_input_imgsize = encoder_input_imgsize
 
         # load background images for each camera
         if "bg" in self.keyfilter:
@@ -106,13 +112,19 @@ class Blender2Dataset(torch.utils.data.Dataset):
         if "fixedcamimage" in self.keyfilter:
 
             ninput = len(self.fixedcameras)
-            fixedcamimage = np.zeros((3 * ninput, 512, 334), dtype=np.float32)
+            fixedimg_inputshape = (512, 334)
+            resize_param = 2
+            if self.encoder_input_imgsize == self.MODE_256x167_ENCODER_INPUT_RES:
+                fixedimg_inputshape = (256, 167)
+                resize_param = 4
+            fixedcamimage = np.zeros((3 * ninput, fixedimg_inputshape[0], fixedimg_inputshape[1]), dtype=np.float32)
+
             for i in range(ninput):
                 imagepath = (
                     "experiments/blender2/data/{}/cam{}_frame{:04}.jpg"
                         .format(self.fixedcameras[i], self.fixedcameras[i], int(frame)))
-                image = np.asarray(Image.open(imagepath), dtype=np.uint8)[::2, ::2, :].transpose((2, 0, 1)).astype(
-                    np.float32)
+                image = np.asarray(Image.open(imagepath), dtype=np.uint8)[::resize_param, ::resize_param, :]\
+                    .transpose((2, 0, 1)).astype(np.float32)
 
                 if np.sum(image) == 0:
                     validinput = False
