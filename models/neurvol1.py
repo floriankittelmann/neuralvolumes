@@ -62,20 +62,16 @@ class Autoencoder(nn.Module):
                 image=None, imagevalid=None, viewtemplate=False,
                 outputlist=[]):
         result = {"losses": {}}
-        start_time = time.time()
         # encode input or get encoding
         if encoding is None:
             encout = self.encoder(fixedcamimage, losslist)
             encoding = encout["encoding"]
             result["losses"].update(encout["losses"])
-        print("needed time for encoder: {}".format(time.time() - start_time))
 
-        start_time = time.time()
         # decode
         decout = self.decoder(encoding, campos, losslist)
         result["losses"].update(decout["losses"])
         result["decout"] = decout
-        print("needed time for decoder: {}".format(time.time() - start_time))
 
         start_time = time.time()
         raymarching = init_with_camera_position(pixelcoords, princpt, focal, camrot, campos, self.dt)
@@ -86,7 +82,6 @@ class Autoencoder(nn.Module):
             imagesize = torch.tensor(image.size()[3:1:-1], dtype=torch.float32, device=pixelcoords.device)
             samplecoords = pixelcoords * 2. / (imagesize[None, None, None, :] - 1.) - 1.
 
-        start_time = time.time()
         # color correction / bg
         if camindex is not None:
             rayrgb = self.colorcal(rayrgb, camindex)
@@ -99,7 +94,6 @@ class Autoencoder(nn.Module):
                 bg = torch.stack([self.bg[self.allcameras[camindex[i].item()]] for i in range(campos.size(0))], dim=0)
 
             rayrgb = rayrgb + (1. - rayalpha) * bg.clamp(min=0.)
-        print("needed time for colorcorrection: {}".format(time.time() - start_time))
 
         start_time = time.time()
         if "irgbrec" in outputlist:
@@ -139,5 +133,5 @@ class Autoencoder(nn.Module):
                 irgbmse_weight = torch.sum(weight.view(weight.size(0), -1), dim=-1)
 
                 result["losses"]["irgbmse"] = (irgbmse, irgbmse_weight)
-        print("needed time for loss calc: {}".format(time.time() - start_time))
+        print("needed time for loss calc in neurvol1: {}".format(time.time() - start_time))
         return result
