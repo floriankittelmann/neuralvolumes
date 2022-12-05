@@ -61,9 +61,12 @@ if __name__ == "__main__":
 
     for epoch in range(epochs_to_learn):
         for data in dataloader:
+            start_time = time.time()
             # forward
             output = ae(iternum, lossweights.keys(), **{k: x.to("cuda") for k, x in data.items()})
+            print("needed time for forward: {}".format(time.time() - start_time))
 
+            start_time = time.time()
             # compute final loss
             loss = sum([
                 lossweights[k] * (torch.sum(v[0]) / torch.sum(v[1]) if isinstance(v, tuple) else torch.mean(v))
@@ -98,11 +101,18 @@ if __name__ == "__main__":
 
                 b = data["campos"].size(0)
                 writer.batch(iternum, iternum * trainprofile.get_batchsize() + torch.arange(b), outpath, **testbatch, **testoutput)
+            print("needed time for loss calc: {}".format(time.time() - start_time))
 
+            start_time = time.time()
             # update parameters
             aeoptim.zero_grad()
+            print("needed time for grad calc: {}".format(time.time() - start_time))
+            start_time = time.time()
             loss.backward()
+            print("needed time for backprop: {}".format(time.time() - start_time))
+            start_time = time.time()
             aeoptim.step()
+            print("needed time for optimiser step: {}".format(time.time() - start_time))
 
             # check for loss explosion
             if loss.item() > 20 * prevloss or not np.isfinite(loss.item()):

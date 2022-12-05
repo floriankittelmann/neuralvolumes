@@ -205,6 +205,8 @@ class Decoder(nn.Module):
         if self.viewconditioned:
             # run alpha branch without viewpoint information
             template = torch.cat([template, self.templatealpha(encoding)], dim=1)
+
+        print()
         # scale up to 0-255 range approximately
         template = F.softplus(bias + scale * template)
 
