@@ -70,7 +70,6 @@ if __name__ == "__main__":
                 lossweights[k] * (torch.sum(v[0]) / torch.sum(v[1]) if isinstance(v, tuple) else torch.mean(v))
                 for k, v in output["losses"].items()])
 
-            train_utils.save_wandb_info(iternum=iternum, loss=loss, output=output, wandb=wandb)
             starttime = train_utils.print_iteration_infos(
                 iternum=iternum,
                 loss=loss,
@@ -91,9 +90,10 @@ if __name__ == "__main__":
 
             prevloss = loss.item()
 
+            np_img = None
             # save intermediate results
             if iternum % 1000 == 0 or iternum in [0, 1, 2, 3, 4, 5]:
-                train_utils.save_model_and_validation_pictures(
+                np_img = train_utils.save_model_and_validation_pictures(
                     iternum=iternum,
                     outpath=outpath,
                     ae=ae,
@@ -102,6 +102,7 @@ if __name__ == "__main__":
                     trainprofile=trainprofile,
                     data=data,
                     writer=writer)
+            train_utils.save_wandb_info(iternum=iternum, loss=loss, output=output, img=np_img, wandb=wandb)
 
             iternum += 1
             torch.cuda.empty_cache()

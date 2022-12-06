@@ -152,13 +152,16 @@ class TrainUtils:
         print("Optimizer instantiated ({:.2f} s)".format(time.time() - starttime))
         return writer, ae, aeoptim, lossweights
 
-    def save_wandb_info(self, iternum, loss, output, wandb):
+    def save_wandb_info(self, iternum, loss, output, img, wandb):
         dict_wandb = {"loss": float(loss.item()), "step": iternum}
         for k, v in output["losses"].items():
             if isinstance(v, tuple):
                 dict_wandb[k] = float(torch.sum(v[0]) / torch.sum(v[1]))
             else:
                 dict_wandb[k] = float(torch.mean(v))
+        if img is not None:
+            image = wandb.Image(img, caption="Validation after {} Iterations".format(iternum))
+            dict_wandb["validation_pictures"] = image
         wandb.log(dict_wandb)
 
     def print_iteration_infos(self, iternum, loss, output, starttime):
@@ -190,5 +193,9 @@ class TrainUtils:
             testoutput = ae(iternum, [], **{k: x.to("cuda") for k, x in testbatch.items()},
                             **progressprof.get_ae_args())
         b = data["campos"].size(0)
-        writer.batch(iternum, iternum * trainprofile.get_batchsize() + torch.arange(b), outpath, **testbatch,
-                     **testoutput)
+        return writer.batch(
+            iternum,
+            iternum * trainprofile.get_batchsize() + torch.arange(b),
+            outpath,
+            **testbatch,
+            **testoutput)
