@@ -29,7 +29,7 @@ class DatasetConfig:
             camerafilter=camerafilter,
             framelist=[i for i in range(1, 502, 1)][:maxframes],
             encoder_input_imgsize=Blender2Dataset.MODE_256x167_ENCODER_INPUT_RES,
-            loss_imgsize_mode=Blender2Dataset.MODE_1067x668_LOSSIMG_INPUT_RES,
+            loss_imgsize_mode=Blender2Dataset.MODE_512x334_LOSSIMG_INPUT_RES,
             keyfilter=["bg", "fixedcamimage", "camera", "image", "pixelcoords"],
             imagemean=100.,
             imagestd=25.,
