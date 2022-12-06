@@ -13,6 +13,7 @@ from models.decoders.LinearTemplate import LinearTemplate
 from models.decoders.ConvWarp import ConvWarp
 import models.utils
 
+
 def gettemplate(templatetype, **kwargs):
     if templatetype == "conv":
         return ConvTemplate(**kwargs)
@@ -20,6 +21,7 @@ def gettemplate(templatetype, **kwargs):
         return LinearTemplate(**kwargs)
     else:
         return None
+
 
 def getwarp(warptype, **kwargs):
     if warptype == "conv":
@@ -29,10 +31,11 @@ def getwarp(warptype, **kwargs):
     else:
         return None
 
+
 class Decoder(nn.Module):
     def __init__(self, templatetype="conv", templateres=128,
-            viewconditioned=False, globalwarp=True, warptype="affinemix",
-            displacementwarp=False):
+                 viewconditioned=False, globalwarp=True, warptype="affinemix",
+                 displacementwarp=False):
         super(Decoder, self).__init__()
 
         self.templatetype = templatetype
@@ -43,10 +46,10 @@ class Decoder(nn.Module):
         self.displacementwarp = displacementwarp
 
         if self.viewconditioned:
-            self.template = gettemplate(self.templatetype, encodingsize=256+3,
-                    outchannels=3, templateres=self.templateres)
+            self.template = gettemplate(self.templatetype, encodingsize=256 + 3,
+                                        outchannels=3, templateres=self.templateres)
             self.templatealpha = gettemplate(self.templatetype, encodingsize=256,
-                    outchannels=1, templateres=self.templateres)
+                                             outchannels=1, templateres=self.templateres)
         else:
             self.template = gettemplate(self.templatetype, templateres=self.templateres)
 
@@ -56,14 +59,14 @@ class Decoder(nn.Module):
             self.quat = models.utils.Quaternion()
 
             self.gwarps = nn.Sequential(
-                    nn.Linear(256, 128), nn.LeakyReLU(0.2),
-                    nn.Linear(128, 3))
+                nn.Linear(256, 128), nn.LeakyReLU(0.2),
+                nn.Linear(128, 3))
             self.gwarpr = nn.Sequential(
-                    nn.Linear(256, 128), nn.LeakyReLU(0.2),
-                    nn.Linear(128, 4))
+                nn.Linear(256, 128), nn.LeakyReLU(0.2),
+                nn.Linear(128, 4))
             self.gwarpt = nn.Sequential(
-                    nn.Linear(256, 128), nn.LeakyReLU(0.2),
-                    nn.Linear(128, 3))
+                nn.Linear(256, 128), nn.LeakyReLU(0.2),
+                nn.Linear(128, 3))
 
             initseq = models.utils.initseq
             for m in [self.gwarps, self.gwarpr, self.gwarpt]:
@@ -100,9 +103,9 @@ class Decoder(nn.Module):
         if "tvl1" in losslist:
             logalpha = torch.log(1e-5 + template[:, -1, :, :, :])
             losses["tvl1"] = torch.mean(torch.sqrt(1e-5 +
-                (logalpha[:, :-1, :-1, 1:] - logalpha[:, :-1, :-1, :-1]) ** 2 +
-                (logalpha[:, :-1, 1:, :-1] - logalpha[:, :-1, :-1, :-1]) ** 2 +
-                (logalpha[:, 1:, :-1, :-1] - logalpha[:, :-1, :-1, :-1]) ** 2))
+                                                   (logalpha[:, :-1, :-1, 1:] - logalpha[:, :-1, :-1, :-1]) ** 2 +
+                                                   (logalpha[:, :-1, 1:, :-1] - logalpha[:, :-1, :-1, :-1]) ** 2 +
+                                                   (logalpha[:, 1:, :-1, :-1] - logalpha[:, :-1, :-1, :-1]) ** 2))
 
         return {"template": template, "warp": warp,
                 **({"gwarps": gwarps, "gwarprot": gwarprot, "gwarpt": gwarpt} if self.globalwarp else {}),

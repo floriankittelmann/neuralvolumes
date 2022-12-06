@@ -40,13 +40,16 @@ class DatasetConfig:
         )
 
     def get_autoencoder_config_func(self, dataset) -> Autoencoder:
+        template_size = 128
+        raymarching_dt = 2. / float(template_size)
+        print("template resolution: ({}, {}, {})".format(template_size, template_size, template_size))
         return Autoencoder(
-            dataset,
-            encoderlib.Encoder(3, Blender2Dataset.MODE_256x167_ENCODER_INPUT_RES),
-            decoderlib.Decoder(globalwarp=False, warptype=None, viewconditioned=False),
-            volsamplerlib.VolSampler(),
-            colorcalib.Colorcal(dataset.get_allcameras()),
-            4. / 256)
+            dataset=dataset,
+            encoder=encoderlib.Encoder(3, Blender2Dataset.MODE_256x167_ENCODER_INPUT_RES),
+            decoder=decoderlib.Decoder(globalwarp=False, warptype=None, viewconditioned=False, templateres=template_size),
+            volsampler=volsamplerlib.VolSampler(),
+            colorcal=colorcalib.Colorcal(dataset.get_allcameras()),
+            dt=raymarching_dt)
 
     def get_train_profile(self) -> TrainBlender2:
         return TrainBlender2(

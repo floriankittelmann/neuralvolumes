@@ -82,7 +82,8 @@ def init_section_view(batchsize: int) -> RayMarchingHelper:
 
 
 def init_with_camera_position(pixelcoords, princpt, focal, camrot, campos, dt) -> RayMarchingHelper:
-    """ pixelcoords: coordinates x,y of pixels -> example: image width 1024x667 ->
+    """
+        pixelcoords: coordinates x,y of pixels -> example: image width 1024x667 ->
         axis x: values from 0.0 - 1023.0,
         axis y: values from 0.0 - 666.0
     """
