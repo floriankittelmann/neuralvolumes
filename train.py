@@ -88,6 +88,7 @@ if __name__ == "__main__":
                 ips = 10. / (endtime - starttime)
                 print(", iter/sec = {:.2f}".format(ips))
                 starttime = time.time()
+            print("")
 
             # compute evaluation output
             if iternum in evalpoints:
