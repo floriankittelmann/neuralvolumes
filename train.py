@@ -70,35 +70,12 @@ if __name__ == "__main__":
                 lossweights[k] * (torch.sum(v[0]) / torch.sum(v[1]) if isinstance(v, tuple) else torch.mean(v))
                 for k, v in output["losses"].items()])
 
-            dict_wandb = {"loss": float(loss.item()), "step": iternum}
-            for k, v in output["losses"].items():
-                if isinstance(v, tuple):
-                    dict_wandb[k] = float(torch.sum(v[0]) / torch.sum(v[1]))
-                else:
-                    dict_wandb[k] = float(torch.mean(v))
-            wandb.log(dict_wandb)
-
-            # print current information
-            print("Iteration {}: loss = {:.5f}, ".format(iternum, float(loss.item())) +
-                  ", ".join(["{} = {:.5f}".format(k, float(
-                      torch.sum(v[0]) / torch.sum(v[1]) if isinstance(v, tuple) else torch.mean(v)))
-                             for k, v in output["losses"].items()]), end="")
-            if iternum % 5 == 0:
-                endtime = time.time()
-                ips = 10. / (endtime - starttime)
-                print(", iter/sec = {:.2f}".format(ips))
-                starttime = time.time()
-            print("")
-
-            # compute evaluation output
-            if iternum in evalpoints:
-                with torch.no_grad():
-                    testoutput = ae(iternum, [], **{k: x.to("cuda") for k, x in testbatch.items()},
-                                    **progressprof.get_ae_args())
-
-
-                b = data["campos"].size(0)
-                writer.batch(iternum, iternum * trainprofile.get_batchsize() + torch.arange(b), outpath, **testbatch, **testoutput)
+            train_utils.save_wandb_info(iternum=iternum, loss=loss, output=output, wandb=wandb)
+            starttime = train_utils.print_iteration_infos(
+                iternum=iternum,
+                loss=loss,
+                output=output,
+                starttime=starttime)
 
             # update parameters
             aeoptim.zero_grad()
@@ -115,8 +92,16 @@ if __name__ == "__main__":
             prevloss = loss.item()
 
             # save intermediate results
-            if iternum % 1000 == 0:
-                torch.save(ae.module.state_dict(), "{}/aeparams.pt".format(outpath))
+            if iternum % 1000 == 0 or iternum in [0, 1, 2, 3, 4, 5]:
+                train_utils.save_model_and_validation_pictures(
+                    iternum=iternum,
+                    outpath=outpath,
+                    ae=ae,
+                    testbatch=testbatch,
+                    progressprof=progressprof,
+                    trainprofile=trainprofile,
+                    data=data,
+                    writer=writer)
 
             iternum += 1
             torch.cuda.empty_cache()

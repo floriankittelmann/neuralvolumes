@@ -151,3 +151,44 @@ class TrainUtils:
         lossweights = trainprofile.get_loss_weights()
         print("Optimizer instantiated ({:.2f} s)".format(time.time() - starttime))
         return writer, ae, aeoptim, lossweights
+
+    def save_wandb_info(self, iternum, loss, output, wandb):
+        dict_wandb = {"loss": float(loss.item()), "step": iternum}
+        for k, v in output["losses"].items():
+            if isinstance(v, tuple):
+                dict_wandb[k] = float(torch.sum(v[0]) / torch.sum(v[1]))
+            else:
+                dict_wandb[k] = float(torch.mean(v))
+        wandb.log(dict_wandb)
+
+    def print_iteration_infos(self, iternum, loss, output, starttime):
+        print("Iteration {}: loss = {:.5f}, ".format(iternum, float(loss.item())) +
+              ", ".join(["{} = {:.5f}".format(k, float(
+                  torch.sum(v[0]) / torch.sum(v[1]) if isinstance(v, tuple) else torch.mean(v)))
+                         for k, v in output["losses"].items()]), end="")
+        if iternum % 5 == 0:
+            endtime = time.time()
+            ips = 10. / (endtime - starttime)
+            print(", iter/sec = {:.2f}".format(ips))
+            starttime = time.time()
+        print("")
+        return starttime
+
+    def save_model_and_validation_pictures(
+            self,
+            iternum,
+            outpath,
+            ae,
+            testbatch,
+            progressprof,
+            trainprofile,
+            data,
+            writer
+    ):
+        torch.save(ae.module.state_dict(), "{}/aeparams.pt".format(outpath))
+        with torch.no_grad():
+            testoutput = ae(iternum, [], **{k: x.to("cuda") for k, x in testbatch.items()},
+                            **progressprof.get_ae_args())
+        b = data["campos"].size(0)
+        writer.batch(iternum, iternum * trainprofile.get_batchsize() + torch.arange(b), outpath, **testbatch,
+                     **testoutput)
