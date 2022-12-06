@@ -63,26 +63,19 @@ class Autoencoder(nn.Module):
                 outputlist=[]):
         result = {"losses": {}}
         # encode input or get encoding
-        start_time = time.time()
         if encoding is None:
             encout = self.encoder(fixedcamimage, losslist)
             encoding = encout["encoding"]
             result["losses"].update(encout["losses"])
-        print("Encoder in sec: {}".format(time.time() - start_time))
 
-        start_time = time.time()
         # decode
         decout = self.decoder(encoding, campos, losslist)
         result["losses"].update(decout["losses"])
         result["decout"] = decout
-        print("Decoder in sec: {}".format(time.time() - start_time))
 
-        start_time = time.time()
         raymarching = init_with_camera_position(pixelcoords, princpt, focal, camrot, campos, self.dt)
         rayrgb, rayalpha = raymarching.do_raymarching(self.volsampler, decout, viewtemplate, self.stepjitter)
-        print("Raymarching in sec: {}".format(time.time() - start_time))
 
-        start_time = time.time()
         if image is not None:
             imagesize = torch.tensor(image.size()[3:1:-1], dtype=torch.float32, device=pixelcoords.device)
             samplecoords = pixelcoords * 2. / (imagesize[None, None, None, :] - 1.) - 1.
@@ -136,5 +129,4 @@ class Autoencoder(nn.Module):
                 irgbmse_weight = torch.sum(weight.view(weight.size(0), -1), dim=-1)
 
                 result["losses"]["irgbmse"] = (irgbmse, irgbmse_weight)
-        print("Colorcorr and some loss calc in sec: {}".format(time.time() - start_time))
         return result
