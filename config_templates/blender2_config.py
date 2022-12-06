@@ -40,7 +40,7 @@ class DatasetConfig:
         )
 
     def get_autoencoder_config_func(self, dataset) -> Autoencoder:
-        template_size = 128
+        template_size = 64
         raymarching_dt = 2. / float(template_size)
         print("template resolution: ({}, {}, {})".format(template_size, template_size, template_size))
         return Autoencoder(
