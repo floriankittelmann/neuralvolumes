@@ -17,7 +17,7 @@ class Blender2Dataset(torch.utils.data.Dataset):
     MODE_512x334_ENCODER_INPUT_RES = 1
     MODE_256x167_ENCODER_INPUT_RES = 2
 
-    MODE_1067x668_LOSSIMG_INPUT_RES = 3
+    MODE_1024x668_LOSSIMG_INPUT_RES = 3
     MODE_512x334_LOSSIMG_INPUT_RES = 4
 
     def __init__(
