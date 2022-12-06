@@ -41,9 +41,15 @@ class Blender2Dataset(torch.utils.data.Dataset):
         self.camrot = {}
         self.focal = {}
         self.princpt = {}
+        self.encoder_input_imgsize = encoder_input_imgsize
+        self.loss_imgsize_mode = loss_imgsize_mode
 
         self.width = CameraSetupInBlender2.get_img_width()
         self.height = CameraSetupInBlender2.get_img_height()
+        if self.loss_imgsize_mode == self.MODE_512x334_LOSSIMG_INPUT_RES:
+            self.width = 512
+            self.height = 334
+
         for camera_nr in range(36):
             camera_str = "{:03d}".format(camera_nr)
             camera = CameraSetupInBlender2(camera_nr)
@@ -69,8 +75,6 @@ class Blender2Dataset(torch.utils.data.Dataset):
         self.subsamplesize = subsamplesize
         self.imagemean = imagemean
         self.imagestd = imagestd
-        self.encoder_input_imgsize = encoder_input_imgsize
-        self.loss_imgsize_mode = loss_imgsize_mode
 
         # load background images for each camera
         if "bg" in self.keyfilter:
@@ -78,7 +82,12 @@ class Blender2Dataset(torch.utils.data.Dataset):
             for i, cam in enumerate(self.cameras):
                 try:
                     imagepath = "experiments/blender2/data/bg.jpg"
-                    image = np.asarray(Image.open(imagepath), dtype=np.uint8).transpose((2, 0, 1)).astype(np.float32)
+                    resize_param_loss_imgs = 1
+                    if self.loss_imgsize_mode == self.MODE_512x334_LOSSIMG_INPUT_RES:
+                        resize_param_loss_imgs = 2
+                    image = np.asarray(Image.open(imagepath), dtype=np.uint8)
+                    image = image[::resize_param_loss_imgs, ::resize_param_loss_imgs, :].transpose((2, 0, 1)) \
+                        .astype(np.float32)
                     self.bg[cam] = image
                 except:
                     pass

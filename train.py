@@ -108,8 +108,6 @@ if __name__ == "__main__":
             del loss
             del output
             gc.collect()
-            if iternum >= 55:
-                exit()
 
         if iternum >= trainprofile.get_maxiter():
             break
