@@ -25,7 +25,7 @@ class TrainUtils:
         parser.add_argument('--profile', type=str, default="Train", help='config profile')
         parser.add_argument('--devices', type=int, nargs='+', default=[0], help='devices')
         parser.add_argument('--resume', type=str, default=None, help='resume training and provide the config path')
-        parser.add_argument('--nofworkers', type=int, default=16)
+        parser.add_argument('--nofworkers', type=int, default=28)
         parser.add_argument('--local', action='store_true', help='training on local machine with small memory size and '
                                                                  'small gpu power')
         parsed, unknown = parser.parse_known_args()
