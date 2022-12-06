@@ -28,7 +28,8 @@ class DatasetConfig:
         return Blender2Dataset(
             camerafilter=camerafilter,
             framelist=[i for i in range(1, 502, 1)][:maxframes],
-            encoder_input_imgsize=Blender2Dataset.MODE_256x167_ENCODER_INPUT_RES,
+            encoder_input_imgsize=Blender2Dataset.MODE_512x334_ENCODER_INPUT_RES,
+            loss_imgsize_mode=Blender2Dataset.MODE_1067x668_LOSSIMG_INPUT_RES,
             keyfilter=["bg", "fixedcamimage", "camera", "image", "pixelcoords"],
             imagemean=100.,
             imagestd=25.,
@@ -41,7 +42,7 @@ class DatasetConfig:
     def get_autoencoder_config_func(self, dataset) -> Autoencoder:
         return Autoencoder(
             dataset,
-            encoderlib.Encoder(3, Blender2Dataset.MODE_256x167_ENCODER_INPUT_RES),
+            encoderlib.Encoder(3, Blender2Dataset.MODE_512x334_ENCODER_INPUT_RES),
             decoderlib.Decoder(globalwarp=False, warptype=None, viewconditioned=False),
             volsamplerlib.VolSampler(),
             colorcalib.Colorcal(dataset.get_allcameras()),

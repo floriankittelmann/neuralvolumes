@@ -122,6 +122,10 @@ class TrainUtils:
         print("Nof-Workers: {}".format(nof_workers))
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size_training, shuffle=True, drop_last=True,
                                                  num_workers=nof_workers)
+        for item in dataset:
+            print("Image Resolution Loss Img: {}".format(item['image'].shape))
+            print("Image Resolution Encoder Input Img: {}".format(item['fixedcamimage'].shape))
+            break
         print("Dataset instantiated ({:.2f} s)".format(time.time() - starttime))
         return dataloader, testbatch, dataset
 

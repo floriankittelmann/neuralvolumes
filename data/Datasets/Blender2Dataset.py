@@ -17,12 +17,16 @@ class Blender2Dataset(torch.utils.data.Dataset):
     MODE_512x334_ENCODER_INPUT_RES = 1
     MODE_256x167_ENCODER_INPUT_RES = 2
 
+    MODE_1067x668_LOSSIMG_INPUT_RES = 3
+    MODE_512x334_LOSSIMG_INPUT_RES = 4
+
     def __init__(
             self,
             camerafilter: Callable[[str], bool],
             keyfilter: List[str],
             framelist: List[int],
             encoder_input_imgsize: int,
+            loss_imgsize_mode: int,
             fixedcameras: List[str] = ['028', '001', '019'],
             subsampletype=None,
             subsamplesize: int = 0,
@@ -66,6 +70,7 @@ class Blender2Dataset(torch.utils.data.Dataset):
         self.imagemean = imagemean
         self.imagestd = imagestd
         self.encoder_input_imgsize = encoder_input_imgsize
+        self.loss_imgsize_mode = loss_imgsize_mode
 
         # load background images for each camera
         if "bg" in self.keyfilter:
@@ -152,6 +157,8 @@ class Blender2Dataset(torch.utils.data.Dataset):
                     "experiments/blender2/data/{}/cam{}_frame{:04}.jpg"
                         .format(cam, cam, int(frame)))
                 resize_param_loss_imgs = 1
+                if self.loss_imgsize_mode == self.MODE_512x334_LOSSIMG_INPUT_RES:
+                    resize_param_loss_imgs = 2
                 image = np.asarray(Image.open(imagepath), dtype=np.uint8)
                 image = image[::resize_param_loss_imgs, ::resize_param_loss_imgs, :].transpose((2, 0, 1))\
                     .astype(np.float32)
