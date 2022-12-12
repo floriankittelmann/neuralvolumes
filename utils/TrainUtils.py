@@ -170,11 +170,13 @@ class TrainUtils:
     ):
         dict_wandb = {
             "train_loss": float(train_loss.item()),
-            "test_loss": float(test_loss.item()),
             "step": iternum
         }
         dict_wandb = self.__append_wandb_dict_from_model_output(train_output, "train", dict_wandb)
-        dict_wandb = self.__append_wandb_dict_from_model_output(test_output, "test", dict_wandb)
+        if test_loss is not None:
+            dict_wandb["test_loss"] = float(test_loss.item())
+        if test_output is not None:
+            dict_wandb = self.__append_wandb_dict_from_model_output(test_output, "test", dict_wandb)
         if validation_img is not None:
             image = wandb.Image(validation_img, caption="Validation after {} Iterations".format(iternum))
             dict_wandb["validation_pictures"] = image
@@ -234,17 +236,14 @@ class TrainUtils:
             data,
             writer
     ) -> (np.array, torch.Tensor):
-        np_img = None
-        # save intermediate results
-        if iternum % 1000 == 0 or iternum in [0, 1, 2, 3, 4, 5]:
-            torch.save(ae.module.state_dict(), "{}/aeparams.pt".format(outpath))
-            b = data["campos"].size(0)
-            np_img = writer.batch(
-                iternum,
-                iternum * trainprofile.get_batchsize() + torch.arange(b),
-                outpath,
-                **test_batch,
-                **testoutput)
+        torch.save(ae.module.state_dict(), "{}/aeparams.pt".format(outpath))
+        b = data["campos"].size(0)
+        np_img = writer.batch(
+            iternum,
+            iternum * trainprofile.get_batchsize() + torch.arange(b),
+            outpath,
+            **test_batch,
+            **testoutput)
         return np_img
 
     def debug_memory_info(self, label:str):

@@ -67,16 +67,6 @@ if __name__ == "__main__":
             output = ae(iternum, lossweights.keys(), **{k: x.to("cuda") for k, x in data.items()})
             train_loss = train_utils.calculate_final_loss_from_output(output, lossweights)
 
-
-            test_batch, testoutput = train_utils.get_testbatch_testoutput(
-                iternum=iternum,
-                progressprof=progressprof,
-                test_dataloader=test_dataloader,
-                ae=ae,
-                lossweights=lossweights
-            )
-            test_loss = train_utils.calculate_final_loss_from_output(testoutput, lossweights)
-
             starttime = train_utils.print_iteration_infos(
                 iternum=iternum,
                 loss=train_loss,
@@ -96,15 +86,30 @@ if __name__ == "__main__":
                 aeoptim = trainprofile.get_optimizer(ae.module)
             prevloss = train_loss.item()
 
-            np_img = train_utils.save_model_and_validation_pictures(
-                iternum=iternum,
-                outpath=outpath,
-                ae=ae,
-                test_batch=test_batch,
-                testoutput=testoutput,
-                trainprofile=trainprofile,
-                data=data,
-                writer=writer)
+            test_loss = None
+            testoutput = None
+            np_img = None
+            # save intermediate results
+            if iternum % 1000 == 0 or iternum in [0, 1, 2, 3, 4, 5]:
+                test_batch, testoutput = train_utils.get_testbatch_testoutput(
+                    iternum=iternum,
+                    progressprof=progressprof,
+                    test_dataloader=test_dataloader,
+                    ae=ae,
+                    lossweights=lossweights
+                )
+                test_loss = train_utils.calculate_final_loss_from_output(testoutput, lossweights)
+
+                np_img = train_utils.save_model_and_validation_pictures(
+                    iternum=iternum,
+                    outpath=outpath,
+                    ae=ae,
+                    test_batch=test_batch,
+                    testoutput=testoutput,
+                    trainprofile=trainprofile,
+                    data=data,
+                    writer=writer)
+
             train_utils.save_wandb_info(
                 iternum=iternum,
                 train_loss=train_loss,
