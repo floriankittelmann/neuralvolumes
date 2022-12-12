@@ -3,6 +3,9 @@ import os
 import shutil
 from datetime import datetime
 import time
+
+import numpy as np
+
 from utils.ImportConfigUtil import ImportConfigUtil
 from utils.EnvUtils import EnvUtils
 import torch
@@ -100,34 +103,37 @@ class TrainUtils:
         # build dataset & testing dataset
         starttime = time.time()
         testdataset = progressprof.get_dataset()
+
+        batch_size_training = trainprofile.get_batchsize()
         batch_size_test = progressprof.get_batchsize()
+        nof_workers = args.nofworkers
         if env_utils.is_local_env():
+            batch_size_training = 3
             batch_size_test = 3
+            nof_workers = 1
+
         if len(testdataset) <= 0:
             raise Exception("problem appeared get_dataset")
-        dataloader = torch.utils.data.DataLoader(testdataset, batch_size=batch_size_test, shuffle=False, drop_last=True,
-                                                 num_workers=0)
-        if len(dataloader) <= 0:
-            raise Exception("problem appeared dataloader")
-        for testbatch in dataloader:
-            break
+        test_dataloader = torch.utils.data.DataLoader(testdataset,
+                                                      batch_size=batch_size_test,
+                                                      shuffle=True,
+                                                      drop_last=True,
+                                                      num_workers=nof_workers)
 
         dataset = trainprofile.get_dataset()
-        nof_workers = args.nofworkers
-        batch_size_training = trainprofile.get_batchsize()
-        if env_utils.is_local_env():
-            nof_workers = 1
-            batch_size_training = 3
         print("Train-Batchsize: {}".format(batch_size_training))
         print("Nof-Workers: {}".format(nof_workers))
-        dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size_training, shuffle=True, drop_last=True,
-                                                 num_workers=nof_workers)
+        train_dataloader = torch.utils.data.DataLoader(dataset,
+                                                       batch_size=batch_size_training,
+                                                       shuffle=True,
+                                                       drop_last=True,
+                                                       num_workers=nof_workers)
         for item in dataset:
             print("Image Resolution Loss Img: {}".format(item['image'].shape))
             print("Image Resolution Encoder Input Img: {}".format(item['fixedcamimage'].shape))
             break
         print("Dataset instantiated ({:.2f} s)".format(time.time() - starttime))
-        return dataloader, testbatch, dataset
+        return train_dataloader, test_dataloader, dataset
 
     def get_writer_autencoder_optimizer_lossweights(self, trainprofile, progressprof, dataset, args, outpath):
         # data writer
@@ -152,17 +158,36 @@ class TrainUtils:
         print("Optimizer instantiated ({:.2f} s)".format(time.time() - starttime))
         return writer, ae, aeoptim, lossweights
 
-    def save_wandb_info(self, iternum, loss, output, img, wandb):
-        dict_wandb = {"loss": float(loss.item()), "step": iternum}
-        for k, v in output["losses"].items():
-            if isinstance(v, tuple):
-                dict_wandb[k] = float(torch.sum(v[0]) / torch.sum(v[1]))
-            else:
-                dict_wandb[k] = float(torch.mean(v))
-        if img is not None:
-            image = wandb.Image(img, caption="Validation after {} Iterations".format(iternum))
+    def save_wandb_info(
+            self,
+            iternum,
+            train_loss,
+            train_output,
+            test_loss,
+            test_output,
+            validation_img,
+            wandb
+    ):
+        dict_wandb = {
+            "train_loss": float(train_loss.item()),
+            "test_loss": float(test_loss.item()),
+            "step": iternum
+        }
+        dict_wandb = self.__append_wandb_dict_from_model_output(train_output, "train", dict_wandb)
+        dict_wandb = self.__append_wandb_dict_from_model_output(test_output, "test", dict_wandb)
+        if validation_img is not None:
+            image = wandb.Image(validation_img, caption="Validation after {} Iterations".format(iternum))
             dict_wandb["validation_pictures"] = image
         wandb.log(dict_wandb)
+
+    def __append_wandb_dict_from_model_output(self, output: dict, train_test_label: str, dict_wandb: dict):
+        for k, v in output["losses"].items():
+            label = "{}_{}".format(train_test_label, k)
+            if isinstance(v, tuple):
+                dict_wandb[label] = float(torch.sum(v[0]) / torch.sum(v[1]))
+            else:
+                dict_wandb[label] = float(torch.mean(v))
+        return dict_wandb
 
     def print_iteration_infos(self, iternum, loss, output, starttime):
         print("Iteration {}: loss = {:.5f}, ".format(iternum, float(loss.item())) +
@@ -177,25 +202,47 @@ class TrainUtils:
         print("")
         return starttime
 
+    def calculate_final_loss_from_output(self, output: dict, lossweights: dict):
+        # compute final loss
+        return sum([
+            lossweights[k] * (torch.sum(v[0]) / torch.sum(v[1]) if isinstance(v, tuple) else torch.mean(v))
+            for k, v in output["losses"].items()])
+
+    def get_testbatch_testoutput(self, iternum, progressprof, test_dataloader, ae, lossweights):
+        testoutput = None
+        test_batch = None
+        for test_batch in test_dataloader:
+            testoutput = ae(
+                iternum,
+                lossweights.keys(),
+                **{k: x.to("cuda") for k, x in test_batch.items()},
+                **progressprof.get_ae_args())
+            break
+
+        if testoutput is None or test_batch is None:
+            raise Exception("Should always have a test-batch and testoutput")
+        return test_batch, testoutput
+
     def save_model_and_validation_pictures(
             self,
             iternum,
             outpath,
             ae,
-            testbatch,
-            progressprof,
+            test_batch,
+            testoutput,
             trainprofile,
             data,
             writer
-    ):
-        torch.save(ae.module.state_dict(), "{}/aeparams.pt".format(outpath))
-        with torch.no_grad():
-            testoutput = ae(iternum, [], **{k: x.to("cuda") for k, x in testbatch.items()},
-                            **progressprof.get_ae_args())
-        b = data["campos"].size(0)
-        return writer.batch(
-            iternum,
-            iternum * trainprofile.get_batchsize() + torch.arange(b),
-            outpath,
-            **testbatch,
-            **testoutput)
+    ) -> (np.array, torch.Tensor):
+        np_img = None
+        # save intermediate results
+        if iternum % 1000 == 0 or iternum in [0, 1, 2, 3, 4, 5]:
+            torch.save(ae.module.state_dict(), "{}/aeparams.pt".format(outpath))
+            b = data["campos"].size(0)
+            np_img = writer.batch(
+                iternum,
+                iternum * trainprofile.get_batchsize() + torch.arange(b),
+                outpath,
+                **test_batch,
+                **testoutput)
+        return np_img
