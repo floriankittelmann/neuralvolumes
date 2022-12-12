@@ -246,3 +246,11 @@ class TrainUtils:
                 **test_batch,
                 **testoutput)
         return np_img
+
+    def debug_memory_info(self, label:str):
+        device = "cuda:0"
+        t = torch.cuda.get_device_properties(device).total_memory
+        r = torch.cuda.memory_reserved(device)
+        a = torch.cuda.memory_allocated(device)
+        f = r - a  # free inside reserved
+        print("{} - free memory: {}".format(label, f))

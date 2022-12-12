@@ -63,8 +63,16 @@ if __name__ == "__main__":
         for data in train_dataloader:
             # forward
             output = ae(iternum, lossweights.keys(), **{k: x.to("cuda") for k, x in data.items()})
-
             train_loss = train_utils.calculate_final_loss_from_output(output, lossweights)
+
+            test_batch, testoutput = train_utils.get_testbatch_testoutput(
+                iternum=iternum,
+                progressprof=progressprof,
+                test_dataloader=test_dataloader,
+                ae=ae,
+                lossweights=lossweights
+            )
+            test_loss = train_utils.calculate_final_loss_from_output(testoutput, lossweights)
 
             starttime = train_utils.print_iteration_infos(
                 iternum=iternum,
@@ -85,14 +93,6 @@ if __name__ == "__main__":
                 aeoptim = trainprofile.get_optimizer(ae.module)
             prevloss = train_loss.item()
 
-            test_batch, testoutput = train_utils.get_testbatch_testoutput(
-                iternum=iternum,
-                progressprof=progressprof,
-                test_dataloader=test_dataloader,
-                ae=ae,
-                lossweights=lossweights
-            )
-            test_loss = train_utils.calculate_final_loss_from_output(testoutput, lossweights)
             np_img = train_utils.save_model_and_validation_pictures(
                 iternum=iternum,
                 outpath=outpath,
@@ -113,8 +113,11 @@ if __name__ == "__main__":
 
             iternum += 1
             torch.cuda.empty_cache()
+            del test_batch
             del train_loss
+            del test_loss
             del output
+            del testoutput
             gc.collect()
 
         if iternum >= trainprofile.get_maxiter():

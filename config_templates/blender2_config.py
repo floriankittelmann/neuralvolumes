@@ -63,7 +63,7 @@ class DatasetConfig:
     def get_progress(self) -> Progress:
         return Progress(
             get_dataset_func=self.get_dataset_config_func,
-            batchsize=8
+            batchsize=32
         )
 
     def get_progresswriter(self) -> ProgressWriter:

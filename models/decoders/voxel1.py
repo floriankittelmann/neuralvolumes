@@ -37,7 +37,6 @@ class Decoder(nn.Module):
                  viewconditioned=False, globalwarp=True, warptype="affinemix",
                  displacementwarp=False):
         super(Decoder, self).__init__()
-
         self.templatetype = templatetype
         self.templateres = templateres
         self.viewconditioned = viewconditioned
