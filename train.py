@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 #
 """Train an autoencoder."""
+import math
 import sys
 import time
 import gc
@@ -34,6 +35,7 @@ if __name__ == "__main__":
         outpath
     )
 
+    start_training_time = time.time()
     # train
     starttime = time.time()
     # evalpoints = np.geomspace(1., trainprofile.get_maxiter(), 100).astype(np.int32)
@@ -64,6 +66,7 @@ if __name__ == "__main__":
             # forward
             output = ae(iternum, lossweights.keys(), **{k: x.to("cuda") for k, x in data.items()})
             train_loss = train_utils.calculate_final_loss_from_output(output, lossweights)
+
 
             test_batch, testoutput = train_utils.get_testbatch_testoutput(
                 iternum=iternum,
@@ -123,5 +126,13 @@ if __name__ == "__main__":
         if iternum >= trainprofile.get_maxiter():
             break
 
-    # cleanup
-    writer.finalize()
+    def format_time_of_sec(time_needed_in_sec: float) -> str:
+        time_needed_in_min = float(time_needed_in_sec) / 60.0
+        time_needed_in_hours = time_needed_in_min / 60.0
+        mins_formated = time_needed_in_min - int(math.floor(time_needed_in_hours)) * 60
+        time_needed_in_days = time_needed_in_hours / 24.0
+        days_formated = int(math.floor(time_needed_in_days))
+        hours_formated = time_needed_in_hours - days_formated * 24
+        return "{}days {}h {}min".format(days_formated, hours_formated, mins_formated)
+
+    print("max iterations reached. finish training! -> Needed:  for {} iterations".format(format_time_of_sec(time.time() - start_training_time), iternum))
