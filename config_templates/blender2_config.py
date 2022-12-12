@@ -19,6 +19,10 @@ from models.neurvol1 import Autoencoder
 
 class DatasetConfig:
 
+    def __init__(self):
+        self.loss_mode_res = Blender2Dataset.MODE_512x334_LOSSIMG_INPUT_RES
+        self.encoder_mode_res = Blender2Dataset.MODE_256x167_ENCODER_INPUT_RES
+
     def get_dataset_config_func(
             self,
             camerafilter: Callable[[str], bool] = lambda x: True,
@@ -28,15 +32,15 @@ class DatasetConfig:
         return Blender2Dataset(
             camerafilter=camerafilter,
             framelist=[i for i in range(1, 502, 1)][:maxframes],
-            encoder_input_imgsize=Blender2Dataset.MODE_256x167_ENCODER_INPUT_RES,
-            loss_imgsize_mode=Blender2Dataset.MODE_512x334_LOSSIMG_INPUT_RES,
+            encoder_input_imgsize=self.encoder_mode_res,
+            loss_imgsize_mode=self.loss_mode_res,
             keyfilter=["bg", "fixedcamimage", "camera", "image", "pixelcoords"],
             imagemean=100.,
             imagestd=25.,
             subsampletype=subsampletype,
             subsamplesize=128,
-            scale_focal=3.0,
-            scale_factor=2.0
+            scale_focal=1.0,
+            scale_factor=1.0
         )
 
     def get_autoencoder_config_func(self, dataset) -> Autoencoder:
@@ -45,7 +49,7 @@ class DatasetConfig:
         print("template resolution: ({}, {}, {})".format(template_size, template_size, template_size))
         return Autoencoder(
             dataset=dataset,
-            encoder=encoderlib.Encoder(3, encoder_input_mod=Blender2Dataset.MODE_256x167_ENCODER_INPUT_RES),
+            encoder=encoderlib.Encoder(3, encoder_input_mod=self.encoder_mode_res),
             decoder=decoderlib.Decoder(globalwarp=False, warptype=None, viewconditioned=False, templateres=template_size),
             volsampler=volsamplerlib.VolSampler(),
             colorcal=colorcalib.Colorcal(dataset.get_allcameras()),
@@ -73,5 +77,6 @@ class DatasetConfig:
         return Render(
             get_autoencoder_func=self.get_autoencoder_config_func,
             get_dataset_func=self.get_dataset_config_func,
-            batchsize=16
+            batchsize=16,
+            resolution_mode=self.loss_mode_res
         )

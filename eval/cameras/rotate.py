@@ -9,17 +9,26 @@ import numpy as np
 
 import torch.utils.data
 from data.CameraSetups.CameraSetupInBlender2 import CameraSetupInBlender2
+from data.Datasets.Blender2Dataset import Blender2Dataset
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, length, period=128):
+    def __init__(self, length, img_res_mode: int, period=128):
         self.camera = CameraSetupInBlender2(1)
         self.length = length
         self.period = period
-        self.width, self.height = self.camera.get_img_width(), self.camera.get_img_height() + 1
+        self.width, self.height = 1024, 667
+        if img_res_mode == Blender2Dataset.MODE_512x334_LOSSIMG_INPUT_RES:
+            self.width, self.height = 512, 334
 
-        self.focal = np.array([self.camera.get_focal_length(), self.camera.get_focal_length()], dtype=np.float32)
-        self.princpt = np.array([self.camera.get_principt_width(), self.camera.get_principt_height()], dtype=np.float32)
+        self.focal = np.array([
+            self.camera.get_focal_length(self.height, self.width),
+            self.camera.get_focal_length(self.height, self.width)
+        ], dtype=np.float32)
+        self.princpt = np.array([
+            self.camera.get_principt_width(self.width),
+            self.camera.get_principt_height(self.height)
+        ], dtype=np.float32)
 
     def __len__(self):
         return self.length

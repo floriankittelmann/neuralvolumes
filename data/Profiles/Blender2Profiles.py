@@ -1,6 +1,8 @@
 from typing import Callable
 import os
 
+from data.Datasets.Blender2Dataset import Blender2Dataset
+
 """ 
 profiles
 A profile is instantiated by the training or evaluation scripts
@@ -103,6 +105,7 @@ class Render:
             maxframes: int = -1,
             showtarget: bool = False,
             viewtemplate: bool = False,
+            resolution_mode: int = Blender2Dataset.MODE_1024x668_LOSSIMG_INPUT_RES
     ):
         self.get_autoencoder_func = get_autoencoder_func
         self.get_dataset_func = get_dataset_func
@@ -111,6 +114,7 @@ class Render:
         self.showtarget = showtarget
         self.viewtemplate = viewtemplate
         self.batchsize = batchsize
+        self.resolution_mode = resolution_mode
 
     def get_autoencoder(self, dataset):
         return self.get_autoencoder_func(dataset)
@@ -123,7 +127,7 @@ class Render:
         import eval.cameras.rotate as cameralib
         dataset = self.get_dataset_func(camerafilter=lambda x: x == self.cam, maxframes=self.maxframes)
         if self.cam == "rotate":
-            camdataset = cameralib.Dataset(len(dataset))
+            camdataset = cameralib.Dataset(len(dataset), self.resolution_mode)
             return data.utils.JoinDataset(camdataset, dataset)
         else:
             return dataset
