@@ -89,6 +89,7 @@ if __name__ == "__main__":
             test_loss = None
             testoutput = None
             np_img = None
+            test_batch = None
             # save intermediate results
             if iternum % 1000 == 0 or iternum in [0, 1, 2, 3, 4, 5]:
                 test_batch, testoutput = train_utils.get_testbatch_testoutput(
@@ -121,16 +122,20 @@ if __name__ == "__main__":
 
             iternum += 1
             torch.cuda.empty_cache()
-            del test_batch
             del train_loss
-            del test_loss
             del output
-            del testoutput
+            if test_batch is not None:
+                del test_batch
+            if test_loss is not None:
+                del test_loss
+            if testoutput is not None:
+                del testoutput
             gc.collect()
 
         if iternum >= trainprofile.get_maxiter():
             break
 
+    torch.save(ae.module.state_dict(), "{}/last_aeparams.pt".format(outpath))
     def format_time_of_sec(time_needed_in_sec: float) -> str:
         time_needed_in_min = float(time_needed_in_sec) / 60.0
         time_needed_in_hours = time_needed_in_min / 60.0

@@ -236,7 +236,11 @@ class TrainUtils:
             data,
             writer
     ) -> (np.array, torch.Tensor):
-        torch.save(ae.module.state_dict(), "{}/aeparams.pt".format(outpath))
+        checkpoints = [200000, 300000, 400000, 500000]
+        if iternum in checkpoints:
+            torch.save(ae.module.state_dict(), "{}/it{}_aeparams.pt".format(outpath, iternum))
+        else:
+            torch.save(ae.module.state_dict(), "{}/aeparams.pt".format(outpath))
         b = data["campos"].size(0)
         np_img = writer.batch(
             iternum,
