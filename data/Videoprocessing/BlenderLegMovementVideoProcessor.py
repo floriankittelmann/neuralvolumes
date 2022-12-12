@@ -101,7 +101,10 @@ class BlenderLegMovementVideoProcessor:
             if not flag or frame_id_in_video != frame_id_to_retrieve:
                 continue
             else:
-                image_path = "{}/cam{}_frame{:04d}.jpg".format(cam_output_folder_path, cam_index, cur_frame_id_to_write)
+                image_path = "{}/cam{:03d}_frame{:04d}.jpg".format(
+                    cam_output_folder_path,
+                    cam_index,
+                    cur_frame_id_to_write)
                 cur_frame_id_to_write = cur_frame_id_to_write + 1
                 frame = cv2.resize(frame, (self.WIDTH_OUTPUT_IMG, self.HEIGHT_OUTPUT_IMG))
                 cv2.imwrite(image_path, frame)
