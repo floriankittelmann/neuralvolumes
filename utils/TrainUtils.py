@@ -236,9 +236,8 @@ class TrainUtils:
             data,
             writer
     ) -> (np.array, torch.Tensor):
-        checkpoints = [200000, 300000, 400000, 500000]
-        if iternum in checkpoints:
-            torch.save(ae.module.state_dict(), "{}/it{}_aeparams.pt".format(outpath, iternum))
+        if iternum % 25000 == 0:
+            torch.save(ae.module.state_dict(), "{}/iteration{}_aeparams.pt".format(outpath, iternum))
         else:
             torch.save(ae.module.state_dict(), "{}/aeparams.pt".format(outpath))
         b = data["campos"].size(0)

@@ -40,7 +40,7 @@ if __name__ == "__main__":
         strict=False)
 
     dataloader_render = DataLoader(dataset, batch_size=batch_size, shuffle=False, drop_last=True, num_workers=nof_workers)
-    render_writer = profile.get_writer(outpath=outpath, nthreads=batch_size, is_plot_batch=True)
+    #render_writer = profile.get_writer(outpath=outpath, nthreads=batch_size, is_plot_batch=True)
     iternum = 0
     itemnum = 0
     starttime = time.time()
@@ -75,6 +75,7 @@ if __name__ == "__main__":
                     stepjitter=0.01,
                     viewtemplate=False
                 )
+                """
                 render_writer.batch(
                     iternum,
                     itemnum + torch.arange(b),
@@ -82,7 +83,7 @@ if __name__ == "__main__":
                     ialpharec=section_alpha,
                     image=None,
                     irgbsqerr=None
-                )
+                )"""
 
 
             endtime = time.time()
@@ -91,3 +92,4 @@ if __name__ == "__main__":
             starttime = time.time()
             iternum += 1
             itemnum += b
+            break
