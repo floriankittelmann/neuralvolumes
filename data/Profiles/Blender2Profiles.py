@@ -83,7 +83,7 @@ class Progress:
 
     def get_ae_args(self): return dict(outputlist=["irgbrec"])
 
-    def get_dataset(self): return self.get_dataset_func(maxframes=1)
+    def get_dataset(self): return self.get_dataset_func()
 
     def get_writer(self): return ProgressWriter()
 

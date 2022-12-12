@@ -81,7 +81,7 @@ class Blender2Dataset(torch.utils.data.Dataset):
             self.bg = {}
             for i, cam in enumerate(self.cameras):
                 try:
-                    imagepath = "experiments/blender2/data/bg.jpg"
+                    imagepath = self.get_bg_img_path()
                     resize_param_loss_imgs = 1
                     if self.loss_imgsize_mode == self.MODE_512x334_LOSSIMG_INPUT_RES:
                         resize_param_loss_imgs = 2
@@ -91,6 +91,9 @@ class Blender2Dataset(torch.utils.data.Dataset):
                     self.bg[cam] = image
                 except:
                     pass
+
+    def get_bg_img_path(self):
+        return "experiments/blender2/data/bg.jpg"
 
     def get_krt(self) -> dict:
         return {k: {
@@ -119,6 +122,9 @@ class Blender2Dataset(torch.utils.data.Dataset):
     def __len__(self) -> int:
         return len(self.framecamlist)
 
+    def get_images_path(self):
+        return "experiments/blender2/data"
+
     def __getitem__(self, idx: int) -> dict:
         frame, cam = self.framecamlist[idx]
         result = {}
@@ -135,8 +141,8 @@ class Blender2Dataset(torch.utils.data.Dataset):
 
             for i in range(ninput):
                 imagepath = (
-                    "experiments/blender2/data/{}/cam{}_frame{:04}.jpg"
-                        .format(self.fixedcameras[i], self.fixedcameras[i], int(frame)))
+                    "{}/{}/cam{}_frame{:04}.jpg"
+                        .format(self.get_images_path(), self.fixedcameras[i], self.fixedcameras[i], int(frame)))
                 image = np.asarray(Image.open(imagepath), dtype=np.uint8)[::resize_param, ::resize_param, :]\
                     .transpose((2, 0, 1)).astype(np.float32)
 
@@ -163,8 +169,8 @@ class Blender2Dataset(torch.utils.data.Dataset):
             if "image" in self.keyfilter:
                 # image
                 imagepath = (
-                    "experiments/blender2/data/{}/cam{}_frame{:04}.jpg"
-                        .format(cam, cam, int(frame)))
+                    "{}/{}/cam{}_frame{:04}.jpg"
+                        .format(self.get_images_path(), cam, cam, int(frame)))
                 resize_param_loss_imgs = 1
                 if self.loss_imgsize_mode == self.MODE_512x334_LOSSIMG_INPUT_RES:
                     resize_param_loss_imgs = 2
