@@ -30,9 +30,7 @@ class RayMarchingHelper:
 
         # raymarch
         done = torch.zeros_like(self.t).bool()
-        how_often = 0
         while not done.all():
-            how_often = how_often + 1
             valid = torch.prod(torch.gt(self.raypos, -1.0) * torch.lt(self.raypos, 1.0), dim=-1).byte()
             validf = valid.float()
             sample_rgb, sample_alpha = volsampler(self.raypos[:, None, :, :, :], **decout, viewtemplate=viewtemplate)
@@ -46,7 +44,6 @@ class RayMarchingHelper:
             rayalpha = rayalpha + contrib
 
             self.__make_step_for_raypos(step)
-        print("how often: " + str(how_often))
         return rayrgb, rayalpha
 
     def __calculate_done(self, done, stepjitter):
