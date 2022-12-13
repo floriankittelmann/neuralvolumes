@@ -95,8 +95,8 @@ class NeuralVolumePlotter:
 if __name__ == "__main__":
 
     plotter = NeuralVolumePlotter()
-    filename = "experiments/blender2/20221206_123045_train_faster_smaller_res/templates"
-    plotter.pyvista_3d_from_template_np(filename, False)
+    filename = "experiments/blenderLegMovement/20221212_180942_train_blenderLeg_campos_adjusted/templates"
+    plotter.pyvista_3d_from_template_np(filename, True)
     #path_stl = "C:\\Users\\Flori\\Desktop\\Test-Export-Blender\\test0.stl"
     #plotter.plot_stl_pyvista(path_stl)
     #plotter.show_plot()
