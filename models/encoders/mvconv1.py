@@ -20,8 +20,12 @@ class Encoder(torch.nn.Module):
         height, width = 512, 334
         if encoder_input_mod == Blender2Dataset.MODE_256x167_ENCODER_INPUT_RES:
             height, width = 256, 167
-        ypad = 0 #((height + 127) // 128) * 128 - height
-        xpad = int(float(height) * 0.75 - width) #((width + 127) // 128) * 128 - width
+        elif encoder_input_mod == Blender2Dataset.MODE_128x84:
+            height, width = 128, 84
+        # ypad = ((height + 127) // 128) * 128 - height
+        # xpad = ((width + 127) // 128) * 128 - width
+        ypad = 0
+        xpad = int(float(height) * 0.75 - width)
         self.pad = nn.ZeroPad2d((xpad // 2, xpad - xpad // 2, ypad // 2, ypad - ypad // 2))
 
         sequential_conv_layers = [nn.Sequential(
@@ -43,6 +47,15 @@ class Encoder(torch.nn.Module):
                 nn.Conv2d(128, 128, 4, 2, 1), nn.LeakyReLU(0.2),
                 nn.Conv2d(128, 256, 4, 2, 1), nn.LeakyReLU(0.2),
                 nn.Conv2d(256, 256, 4, 2, 1), nn.LeakyReLU(0.2))
+                for i in range(1 if self.tied else self.ninputs)]
+        elif encoder_input_mod == Blender2Dataset.MODE_128x84:
+            sequential_conv_layers = [nn.Sequential(
+                # in_channels, out_channels, kernel_size, stride, padding
+                nn.Conv2d(3, 64, 4, 2, 1), nn.LeakyReLU(0.2),
+                nn.Conv2d(64, 64, 4, 2, 1), nn.LeakyReLU(0.2),
+                nn.Conv2d(64, 128, 4, 2, 1), nn.LeakyReLU(0.2),
+                nn.Conv2d(128, 128, 4, 2, 1), nn.LeakyReLU(0.2),
+                nn.Conv2d(128, 256, 4, 2, 1), nn.LeakyReLU(0.2))
                 for i in range(1 if self.tied else self.ninputs)]
 
         self.down1 = nn.ModuleList(sequential_conv_layers)

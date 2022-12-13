@@ -63,6 +63,7 @@ class Autoencoder(nn.Module):
                 outputlist=[]):
         result = {"losses": {}}
         # encode input or get encoding
+
         if encoding is None:
             encout = self.encoder(fixedcamimage, losslist)
             encoding = encout["encoding"]

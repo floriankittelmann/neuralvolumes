@@ -22,8 +22,8 @@ from models.neurvol1 import Autoencoder
 class DatasetConfig:
 
     def __init__(self):
-        self.loss_mode_res = Blender2Dataset.MODE_512x334_LOSSIMG_INPUT_RES
-        self.encoder_mode_res = Blender2Dataset.MODE_256x167_ENCODER_INPUT_RES
+        self.loss_mode_res = Blender2Dataset.MODE_128x84
+        self.encoder_mode_res = Blender2Dataset.MODE_128x84
 
     def get_train_dataset_config_func(
             self,
@@ -40,7 +40,7 @@ class DatasetConfig:
             imagemean=100.,
             imagestd=25.,
             subsampletype=subsampletype,
-            subsamplesize=128,
+            subsamplesize=16,
             scale_focal=1.0,
             scale_factor=1.0
         )
@@ -60,14 +60,14 @@ class DatasetConfig:
             imagemean=100.,
             imagestd=25.,
             subsampletype=subsampletype,
-            subsamplesize=128,
+            subsamplesize=16,
             scale_focal=1.0,
             scale_factor=1.0
         )
 
     def get_autoencoder_config_func(self, dataset) -> Autoencoder:
-        template_size = 32
-        raymarching_dt = 2. / float(template_size)
+        template_size = 16
+        raymarching_dt = 2. / float(template_size - 4)
         print("template resolution: ({}, {}, {})".format(template_size, template_size, template_size))
         return Autoencoder(
             dataset=dataset,

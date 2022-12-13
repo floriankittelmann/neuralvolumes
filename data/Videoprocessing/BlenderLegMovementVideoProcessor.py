@@ -1,30 +1,25 @@
 import cv2
 import os
+from BlenderLegMovementPrepareConfig import BlenderLegMovementPrepareConfig
 
 
 class BlenderLegMovementVideoProcessor:
+
     WIDTH_OUTPUT_IMG = 668
     HEIGHT_OUTPUT_IMG = 1024
-
-    PATH_SLIGHTLY_RAISED = "experiments/blenderLegMovement/data/videos/LegSlightlyRaised"
-    PATH_MEDIUM_RAISED = "experiments/blenderLegMovement/data/videos/LegMediumRaised"
-    PATH_HIGH_RAISED = "experiments/blenderLegMovement/data/videos/LegHighRaised"
 
     PATH_TRAIN_DATASET = "experiments/blenderLegMovement/data/train"
     PATH_TEST_DATASET = "experiments/blenderLegMovement/data/test"
 
-    NOF_FRAMES_OF_THE_VIDEOS = 100
-
     def __init__(self):
-        # train are 32 combinations à 100 pictures -> 32 combinations x 100 pictures x 36 cameras = 115'200 pictures
-        self.amplitudes_train: list[str] = [self.PATH_SLIGHTLY_RAISED, self.PATH_MEDIUM_RAISED]
-        self.frame_subsampling_train: list[int] = [3, 7, 15, 31]  # Each 3., 7., 15., 31. Frame
-        self.phase_shift_subsampling_train: list[int] = [5, 11, 21, 26]  # Start at 5., 11., 21., 26. Frame
+        ds_config = BlenderLegMovementPrepareConfig()
+        self.amplitudes_train: list[str] = ds_config.get_amplitudes_train()
+        self.frame_subsampling_train: list[int] = ds_config.get_frame_subsampling_train()
+        self.phase_shift_subsampling_train: list[int] = ds_config.get_phase_shift_subsampling_train()
 
-        # train are 8 combinations à 100 pictures -> 8 combinations x 100 pictures x 36 cameras = 28'000 pictures
-        self.amplitudes_test: list[str] = [self.PATH_SLIGHTLY_RAISED, self.PATH_HIGH_RAISED]
-        self.frame_subsampling_test: list[int] = [5, 11]
-        self.phase_shift_subsampling_test: list[int] = [7, 13]
+        self.amplitudes_test: list[str] = ds_config.get_amplitudes_test()
+        self.frame_subsampling_test: list[int] = ds_config.get_frame_subsampling_test()
+        self.phase_shift_subsampling_test: list[int] = ds_config.get_phase_shift_subsampling_test()
 
     def subsample_train_dataset(self):
         frame_id_to_write = 0
@@ -110,8 +105,8 @@ class BlenderLegMovementVideoProcessor:
                 cv2.imwrite(image_path, frame)
                 frame_id_to_retrieve = frame_id_to_retrieve + frame_frequence
                 frame_id_output_id = frame_id_output_id + 1
-                if frame_id_to_retrieve > self.NOF_FRAMES_OF_THE_VIDEOS:
-                    frame_id_to_retrieve = frame_id_to_retrieve - self.NOF_FRAMES_OF_THE_VIDEOS
+                if frame_id_to_retrieve > BlenderLegMovementPrepareConfig.NOF_FRAMES_OF_THE_VIDEOS:
+                    frame_id_to_retrieve = frame_id_to_retrieve - BlenderLegMovementPrepareConfig.NOF_FRAMES_OF_THE_VIDEOS
                     cap = cv2.VideoCapture(cam_video_path)
                     frame_id_in_video = 0
             if frame_id_output_id >= nof_frames_to_write:

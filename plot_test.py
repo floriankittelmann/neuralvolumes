@@ -59,27 +59,6 @@ class TestPlot(NeuralVolumePlotter):
         print(rgb[0, 0, 0, 0, 0])
         print(alpha[0, 0, 0, 0, 0])
 
-    def plot_stl_pyvista(self, filenameMesh: str):
-        mesh = pv.read(filenameMesh)
-
-        density = mesh.length / 100
-        x_min, x_max, y_min, y_max, z_min, z_max = mesh.bounds
-        x = np.arange(x_min, x_max, density)
-        y = np.arange(y_min, y_max, density)
-        z = np.arange(z_min, z_max, density)
-        x, y, z = np.meshgrid(x, y, z)
-
-        # Create unstructured grid from the structured grid
-        grid = pv.StructuredGrid(x, y, z)
-        ugrid = pv.UnstructuredGrid(grid)
-
-        grid = pv.StructuredGrid(x / 100., y / 100., z / 100.)
-        # get part of the mesh within the mesh's bounding surface.
-        selection = ugrid.select_enclosed_points(mesh.extract_surface(), tolerance=0.0, check_surface=False)
-        mask = selection.point_data['SelectedPoints'].view(bool)
-        mask = mask.reshape(x.shape)
-        self.plotter.add_points(grid.points, cmap=["#00000000", "#ff00004D"], scalars=mask)
-
     def show_plot(self):
         self.plotter.show_axes_all()
         self.plotter.show()

@@ -93,8 +93,8 @@ class CameraSetupPlotter:
         camrot = dataset_of_camera['camrot']
         campos = dataset_of_camera['campos']
 
-        x_size = 512
-        y_size = 334
+        x_size = 128
+        y_size = 84
         pixelcoords = torch.from_numpy(pixelcoords.reshape((1, x_size, y_size, 2)))
         princpt = torch.from_numpy(princpt.reshape((1, 2)))
         focal = torch.from_numpy(focal.reshape((1, 2)))
@@ -103,8 +103,8 @@ class CameraSetupPlotter:
         dt = 0.1
         ray_helper = init_with_camera_position(pixelcoords, princpt, focal, camrot, campos, dt)
         list_points_to_plot = []
-        for x in range(0, x_size, 100):
-            for y in range(0, y_size, 100):
+        for x in range(0, x_size, 10):
+            for y in range(0, y_size, 10):
                 list_points_to_plot.append({'x': x, 'y': y, 'plotX': None, 'plotY': None, 'plotZ': None})
         nof_iterations = 0
         for raypos in ray_helper.iterate_raypos():

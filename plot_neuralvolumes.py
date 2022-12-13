@@ -53,17 +53,39 @@ class NeuralVolumePlotter:
         sample_rgba = sample_rgba.reshape((batchsize, int(density), int(density), int(density), 4))
         return pos, sample_rgba.astype(float), dimension
 
+    def plot_stl_pyvista(self, filenameMesh: str):
+        mesh = pv.read(filenameMesh)
+
+        density = mesh.length / 100
+        x_min, x_max, y_min, y_max, z_min, z_max = mesh.bounds
+        x = np.arange(x_min, x_max, density)
+        y = np.arange(y_min, y_max, density)
+        z = np.arange(z_min, z_max, density)
+        x, y, z = np.meshgrid(x, y, z)
+
+        # Create unstructured grid from the structured grid
+        grid = pv.StructuredGrid(x, y, z)
+        ugrid = pv.UnstructuredGrid(grid)
+
+        grid = pv.StructuredGrid(x / 100., y / 100., z / 100.)
+        # get part of the mesh within the mesh's bounding surface.
+        selection = ugrid.select_enclosed_points(mesh.extract_surface(), tolerance=0.0, check_surface=False)
+        mask = selection.point_data['SelectedPoints'].view(bool)
+        mask = mask.reshape(x.shape)
+        return grid, mask
+
     def pyvista_3d_from_template_np(
             self,
             outputfolder: str,
             overwrite_color_to_black: bool = False,
-            nof_frames: int = 500
-    ):
+            add_ground_truth: bool = False,
+            nof_frames: int = 500):
         plotter_test: Plotter = pv.Plotter()
         prepare_template: Callable = self.__prepare_template_np_plot
         density: float = 128.0
+        add_ground_truth_to_plotter: Callable = self.plot_stl_pyvista
 
-        def create_points(value):
+        def slider_callback_create_points(value):
             plotter_test.clear_actors()
             res: int = int(value)
             np_filename: str = os.path.join(outputfolder, "frame{}.npy".format(res))
@@ -80,23 +102,30 @@ class NeuralVolumePlotter:
             sample_rgba[:, :, :, :, 3] = sample_rgba[:, :, :, :, 3] / 255.
             grid = pv.StructuredGrid(x, y, z)
 
-            #batchsize = sample_rgba.shape[0]
-            #for i in range(batchsize):
+            # batchsize = sample_rgba.shape[0]
+            # for i in range(batchsize):
             sample_rgb = sample_rgba[0, :, :, :, 0:4].reshape((dimension, 4))
             actor = plotter_test.add_points(grid.points, scalars=sample_rgb, rgb=True)
+            if add_ground_truth:
+                grid, mask = add_ground_truth_to_plotter("experiments/blenderLegMovement/data/groundtruth_test/frame{:04d}.stl".format(res))
+                plotter_test.add_points(grid.points, cmap=["#00000000", "#ff00004D"], scalars=mask)
             return
 
         numpy_files = [f for f in os.listdir(outputfolder) if os.path.isfile(os.path.join(outputfolder, f)) and f.endswith(".npy")]
-        plotter_test.add_slider_widget(callback=create_points, value=0, rng=[0, len(numpy_files)], title='Time')
+        plotter_test.add_slider_widget(callback=slider_callback_create_points, value=0, rng=[0, len(numpy_files)], title='Time')
         plotter_test.show_axes_all()
         plotter_test.show()
 
 
 if __name__ == "__main__":
-
     plotter = NeuralVolumePlotter()
+    #filename = "experiments/blender2/20221212_180714_train_blender2_new_campos/templates"
     filename = "experiments/blenderLegMovement/20221212_180942_train_blenderLeg_campos_adjusted/templates"
-    plotter.pyvista_3d_from_template_np(filename, True)
+    plotter.pyvista_3d_from_template_np(
+        filename,
+        overwrite_color_to_black=True,
+        add_ground_truth=False)
+
     #path_stl = "C:\\Users\\Flori\\Desktop\\Test-Export-Blender\\test0.stl"
     #plotter.plot_stl_pyvista(path_stl)
     #plotter.show_plot()

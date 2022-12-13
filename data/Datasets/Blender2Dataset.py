@@ -20,6 +20,8 @@ class Blender2Dataset(torch.utils.data.Dataset):
     MODE_1024x668_LOSSIMG_INPUT_RES = 3
     MODE_512x334_LOSSIMG_INPUT_RES = 4
 
+    MODE_128x84 = 5
+
     def __init__(
             self,
             camerafilter: Callable[[str], bool],
@@ -49,6 +51,9 @@ class Blender2Dataset(torch.utils.data.Dataset):
         if self.loss_imgsize_mode == self.MODE_512x334_LOSSIMG_INPUT_RES:
             self.width = 512
             self.height = 334
+        elif self.loss_imgsize_mode == self.MODE_128x84:
+            self.width = 128
+            self.height = 84
 
         for camera_nr in range(36):
             camera_str = "{:03d}".format(camera_nr)
@@ -90,6 +95,8 @@ class Blender2Dataset(torch.utils.data.Dataset):
                     resize_param_loss_imgs = 1
                     if self.loss_imgsize_mode == self.MODE_512x334_LOSSIMG_INPUT_RES:
                         resize_param_loss_imgs = 2
+                    elif self.loss_imgsize_mode == self.MODE_128x84:
+                        resize_param_loss_imgs = 8
                     image = np.asarray(Image.open(imagepath), dtype=np.uint8)
                     image = image[::resize_param_loss_imgs, ::resize_param_loss_imgs, :].transpose((2, 0, 1)) \
                         .astype(np.float32)
@@ -142,6 +149,9 @@ class Blender2Dataset(torch.utils.data.Dataset):
             if self.encoder_input_imgsize == self.MODE_256x167_ENCODER_INPUT_RES:
                 fixedimg_inputshape = (256, 167)
                 resize_param = 4
+            elif self.encoder_input_imgsize == self.MODE_128x84:
+                fixedimg_inputshape = (128, 84)
+                resize_param = 8
             fixedcamimage = np.zeros((3 * ninput, fixedimg_inputshape[0], fixedimg_inputshape[1]), dtype=np.float32)
 
             for i in range(ninput):
@@ -179,6 +189,8 @@ class Blender2Dataset(torch.utils.data.Dataset):
                 resize_param_loss_imgs = 1
                 if self.loss_imgsize_mode == self.MODE_512x334_LOSSIMG_INPUT_RES:
                     resize_param_loss_imgs = 2
+                elif self.loss_imgsize_mode == self.MODE_128x84:
+                    resize_param_loss_imgs = 8
                 image = np.asarray(Image.open(imagepath), dtype=np.uint8)
                 image = image[::resize_param_loss_imgs, ::resize_param_loss_imgs, :].transpose((2, 0, 1))\
                     .astype(np.float32)
