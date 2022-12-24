@@ -45,7 +45,8 @@ class TrainBlender2:
         return torch.optim.Adam(aeparams, lr=self.lr, betas=(0.9, 0.999))
 
     def get_loss_weights(self):
-        return {"irgbmse": 1.0, "kldiv": 0.001, "alphapr": 0.01, "tvl1": 0.01}
+        return {"irgbmse": 1000.0, "kldiv": 0.01, "alphapr": 0.01, "tvl1": 0.01}
+        #return {"irgbmse": 1.0, "kldiv": 0.001, "alphapr": 0.01, "tvl1": 0.01}
 
 
 class ProgressWriter:
