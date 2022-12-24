@@ -111,8 +111,10 @@ class Autoencoder(nn.Module):
                 image = F.grid_sample(image, samplecoords)
 
             # standardize
-            rayrgb = (rayrgb - self.imagemean) / self.imagestd
-            image = (image - self.imagemean) / self.imagestd
+            #rayrgb = (rayrgb - self.imagemean) / self.imagestd
+            #image = (image - self.imagemean) / self.imagestd
+            rayrgb = rayrgb / 255. * 2. - 1.
+            image = image / 255. * 2. - 1.
 
             # compute reconstruction loss weighting
             if imagevalid is not None:
