@@ -160,13 +160,14 @@ class Blender2Dataset(torch.utils.data.Dataset):
                         .format(self.get_images_path(), self.fixedcameras[i], self.fixedcameras[i], int(frame)))
                 image = np.asarray(Image.open(imagepath), dtype=np.uint8)[::resize_param, ::resize_param, :]\
                     .transpose((2, 0, 1)).astype(np.float32)
+                image = image / 255.0 * 2.0 - 1.0
 
                 if np.sum(image) == 0:
                     validinput = False
                 fixedcamimage[i * 3:(i + 1) * 3, :, :] = image
 
-            fixedcamimage[:] -= self.imagemean
-            fixedcamimage[:] /= self.imagestd
+            #fixedcamimage[:] -= self.imagemean
+            #fixedcamimage[:] /= self.imagestd
             result["fixedcamimage"] = fixedcamimage
 
         result["validinput"] = np.float32(1.0 if validinput else 0.0)

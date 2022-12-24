@@ -72,9 +72,6 @@ class Decoder(nn.Module):
                 initseq(m)
 
     def forward(self, encoding, viewpos, losslist=[]):
-        scale = torch.tensor([25., 25., 25., 1.], device=encoding.device)[None, :, None, None, None]
-        bias = torch.tensor([100., 100., 100., 0.], device=encoding.device)[None, :, None, None, None]
-
         # run template branch
         viewdir = viewpos / torch.sqrt(torch.sum(viewpos ** 2, dim=-1, keepdim=True))
         templatein = torch.cat([encoding, viewdir], dim=1) if self.viewconditioned else encoding
@@ -83,8 +80,13 @@ class Decoder(nn.Module):
             # run alpha branch without viewpoint information
             template = torch.cat([template, self.templatealpha(encoding)], dim=1)
 
-        # scale up to 0-255 range approximately
-        template = F.softplus(bias + scale * template)
+        template = torch.clip(template, min=-1.0, max=1.0)
+
+        # scale up to 0-255
+        scaleTwo = torch.tensor([255., 255., 255., 1.], device=encoding.device)[None, :, None, None, None]
+        scaleOne = torch.tensor([2., 2., 2., 2.], device=encoding.device)[None, :, None, None, None]
+        bias = torch.tensor([1., 1., 1., 1.], device=encoding.device)[None, :, None, None, None]
+        template = (template + bias) / scaleOne * scaleTwo
 
         # compute warp voxel field
         warp = self.warp(encoding) if self.warp is not None else None
