@@ -40,8 +40,6 @@ class NeuralVolumePlotter:
         template = torch.from_numpy(template)
         template = template.to(cur_device)
 
-
-
         volsampler = VolSampler()
         sample_rgb, sample_alpha = volsampler(pos=pos, template=template)
 
@@ -90,7 +88,7 @@ class NeuralVolumePlotter:
             nof_frames: int = 500):
         plotter_test: Plotter = pv.Plotter()
         prepare_template: Callable = self.__prepare_template_np_plot
-        density: float = 32.0
+        density: float = 16.0
         add_ground_truth_to_plotter: Callable = self.plot_stl_pyvista
 
         def slider_callback_create_points(value):
@@ -106,10 +104,8 @@ class NeuralVolumePlotter:
 
             if overwrite_color_to_black:
                 sample_rgba[:, :, :, :, 0:3] = np.zeros(sample_rgba[:, :, :, :, 0:3].shape)
-            else:
-                sample_rgba[:, :, :, :, 0:3] = sample_rgba[:, :, :, :, 0:3] / 255.
-                gamma_correction_value = (2. / 1.)
-                sample_rgba[:, :, :, :, 0:3] = sample_rgba[:, :, :, :, 0:3] ** gamma_correction_value
+            #else:
+                #sample_rgba[:, :, :, :, 0:3] = sample_rgba[:, :, :, :, 0:3] / 255.
 
             #sample_rgba[:, :, :, :, 3] = np.ones(sample_rgba[:, :, :, :, 3].shape) * 0.5
 
