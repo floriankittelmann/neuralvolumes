@@ -98,7 +98,7 @@ class Render():
         import eval.cameras.rotate as cameralib
         dataset = get_dataset(camerafilter=lambda x: x == self.cam, maxframes=self.maxframes)
         if self.cam is None:
-            camdataset = cameralib.Dataset(len(dataset))
+            camdataset = cameralib.Dataset(len(dataset), dataset)
             return data.utils.JoinDataset(camdataset, dataset)
         else:
             return dataset

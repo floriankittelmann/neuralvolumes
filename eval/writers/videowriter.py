@@ -15,13 +15,9 @@ from PIL import Image
 
 def writeimage(x):
     itemnum, imgout, outpath = x
-    gamma_correction_value = (2. / 1.)
-    imgout = np.clip(np.clip(imgout / 255., 0., 255.) ** gamma_correction_value * 255., 0., 255).astype(np.uint8)
-
     if imgout.shape[1] % 2 != 0:
         imgout = imgout[:, :-1]
-
-    Image.fromarray(imgout).save(os.path.join(outpath, "{:06}.jpg".format(itemnum)))
+    Image.fromarray(imgout.astype(np.uint8)).save(os.path.join(outpath, "{:06}.jpg".format(itemnum)))
 
 
 class Writer:
@@ -62,36 +58,9 @@ class Writer:
             self,
             iternum,
             itemnum,
-            irgbrec,
-            ialpharec=None,
-            image=None,
-            irgbsqerr=None,
             **kwargs
     ):
-        irgbrec = irgbrec.data.to("cpu").numpy().transpose((0, 2, 3, 1))
-        if ialpharec is not None:
-            ialpharec = ialpharec.data.to("cpu").numpy()[:, 0, :, :, None]
-        else:
-            ialpharec = 1.0
-
-        # color correction
-        imgout = irgbrec * self.colcorrect[None, None, None, :]
-
-        # composite background color
-        imgout = imgout + (1. - ialpharec) * self.bgcolor[None, None, None, :]
-
-        # concatenate ground truth image
-        if self.showtarget and image is not None:
-            image = image.data.to("cpu").numpy().transpose((0, 2, 3, 1))
-            image = image * self.colcorrect[None, None, None, :]
-            imgout = np.concatenate((imgout, image), axis=2)
-
-        # concatenate difference image
-        if self.showdiff and imagediff is not None:
-            irgbsqerr = np.mean(irgbsqerr.data.to("cpu").numpy(), axis=1)
-            irgbsqerr = (cm.magma(4. * irgbsqerr / 255.)[:, :, :, :3] * 255.)
-            imgout = np.concatenate((imgout, irgbsqerr), axis=2)
-
+        imgout = kwargs["irgbrec"].data.to("cpu").numpy().transpose((0, 2, 3, 1))
         outpath_img_folder = self.outpath_img_folder
         self.writepool.map(writeimage,
                            zip(itemnum.data.to("cpu").numpy(),

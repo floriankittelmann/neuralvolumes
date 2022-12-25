@@ -13,10 +13,11 @@ from data.Datasets.Blender2Dataset import Blender2Dataset
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, length, img_res_mode: int, period=128):
+    def __init__(self, length, img_res_mode: int, dataset_to_render: Blender2Dataset):
         self.camera = CameraSetupInBlender2(1)
         self.length = length
-        self.period = period
+        self.dataset_to_render = dataset_to_render
+        self.img_res_mode = img_res_mode
         if img_res_mode == Blender2Dataset.MODE_512x334_LOSSIMG_INPUT_RES:
             self.width, self.height = 512, 334
         elif img_res_mode == Blender2Dataset.MODE_128x84:
@@ -26,12 +27,10 @@ class Dataset(torch.utils.data.Dataset):
 
         self.focal = np.array([
             self.camera.get_focal_length(self.height, self.width),
-            self.camera.get_focal_length(self.height, self.width)
-        ], dtype=np.float32)
+            self.camera.get_focal_length(self.height, self.width)], dtype=np.float32)
         self.princpt = np.array([
             self.camera.get_principt_width(self.width),
-            self.camera.get_principt_height(self.height)
-        ], dtype=np.float32)
+            self.camera.get_principt_height(self.height)], dtype=np.float32)
 
     def __len__(self):
         return self.length
@@ -44,6 +43,11 @@ class Dataset(torch.utils.data.Dataset):
             "focal": self.focal,
             "princpt": self.princpt,
             "size": np.array([self.width, self.height])}}
+
+    def get_background(self, bg) -> None:
+        background = self.dataset_to_render.get_resized_background_img(self.img_res_mode)
+        background = background.transpose((2, 1, 0))
+        bg["rotate"].data[:] = torch.from_numpy(background).to("cuda")
 
     def __getitem__(self, idx):
         campos, camrot = self.camera.get_render_rot(idx)

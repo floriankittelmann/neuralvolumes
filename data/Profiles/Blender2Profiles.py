@@ -45,8 +45,8 @@ class TrainBlender2:
         return torch.optim.Adam(aeparams, lr=self.lr, betas=(0.9, 0.999))
 
     def get_loss_weights(self):
-        return {"irgbmse": 1000.0, "kldiv": 0.01, "alphapr": 0.01, "tvl1": 0.01}
-        #return {"irgbmse": 1.0, "kldiv": 0.001, "alphapr": 0.01, "tvl1": 0.01}
+        #return {"irgbmse": 1000.0, "kldiv": 0.01, "alphapr": 0.01, "tvl1": 0.01}
+        return {"irgbmse": 1.0, "kldiv": 0.001, "alphapr": 0.01, "tvl1": 0.01}
 
 
 class ProgressWriter:
@@ -59,7 +59,8 @@ class ProgressWriter:
             row.append(
                 np.concatenate((
                     kwargs["irgbrec"][i].data.to("cpu").numpy().transpose((1, 2, 0))[::2, ::2],
-                    kwargs["image"][i].data.to("cpu").numpy().transpose((1, 2, 0))[::2, ::2]), axis=1))
+                    kwargs["image"][i].data.to("cpu").numpy().transpose((1, 2, 0))[::2, ::2]
+                ), axis=1))
             if len(row) == 4:
                 rows.append(np.concatenate(row, axis=1))
                 row = []
@@ -128,7 +129,7 @@ class Render:
         import eval.cameras.rotate as cameralib
         dataset = self.get_dataset_func(camerafilter=lambda x: x == self.cam, maxframes=self.maxframes)
         if self.cam == "rotate":
-            camdataset = cameralib.Dataset(len(dataset), self.resolution_mode)
+            camdataset = cameralib.Dataset(len(dataset), self.resolution_mode, dataset)
             return data.utils.JoinDataset(camdataset, dataset)
         else:
             return dataset
