@@ -46,13 +46,12 @@ class Dataset(torch.utils.data.Dataset):
             "size": np.array([self.width, self.height])}}
 
     def __getitem__(self, idx):
-        scale_focal = 3.0
         campos, camrot = self.camera.get_render_rot(idx)
 
         px, py = np.meshgrid(np.arange(self.width).astype(np.float32), np.arange(self.height).astype(np.float32))
         pixelcoords = np.stack((px, py), axis=-1)
         return {"campos": campos,
                 "camrot": camrot,
-                "focal": self.focal * scale_focal,
+                "focal": self.focal,
                 "princpt": self.princpt,
                 "pixelcoords": pixelcoords}
