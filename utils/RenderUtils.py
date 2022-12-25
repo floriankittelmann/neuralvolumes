@@ -38,6 +38,7 @@ class RenderUtils:
         parser.add_argument('--devices', type=int, nargs='+', default=[0], help='devices')
         parser.add_argument('--nofworkers', type=int, default=16, help='nofworkers')
         parser.add_argument('--cam', type=str, default="rotate", help='camera mode to render')
+        parser.add_argument('--iteration', type=int, default=None, help='iteration of aeparams to choose')
         parsed, unknown = parser.parse_known_args()
         for arg in unknown:
             if arg.startswith(("-", "--")):
@@ -70,9 +71,14 @@ class RenderUtils:
         ae = profile.get_autoencoder(dataset)
         torch.cuda.set_device(args.devices[0])
         ae = torch.nn.DataParallel(ae, device_ids=args.devices).to("cuda").eval()
-        # load
+
+        iterationPoint = args.iteration
+        aeparams_file_name = "aeparams"
+        if iterationPoint is not None:
+            aeparams_file_name = "iteration{}_aeparams".format(iterationPoint)
         ae.module.load_state_dict(
-            torch.load("{}/aeparams.pt".format(outpath), map_location=torch.device('cuda', args.devices[0])),
+            torch.load("{}/{}.pt".format(outpath, aeparams_file_name),
+                       map_location=torch.device('cuda', args.devices[0])),
             strict=False)
 
         dataloader_render = DataLoader(dataset, batch_size=batch_size_training, shuffle=False, drop_last=True,

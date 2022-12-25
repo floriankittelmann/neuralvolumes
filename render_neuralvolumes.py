@@ -34,9 +34,12 @@ if __name__ == "__main__":
     torch.cuda.set_device(args.devices[0])
     ae = torch.nn.DataParallel(ae, device_ids=args.devices).to("cuda").eval()
 
-    # load
+    iterationPoint = args.iteration
+    aeparams_file_name = "aeparams"
+    if iterationPoint is not None:
+        aeparams_file_name = "iteration{}_aeparams".format(iterationPoint)
     ae.module.load_state_dict(
-        torch.load("{}/aeparams.pt".format(outpath), map_location=torch.device('cuda', args.devices[0])),
+        torch.load("{}/{}.pt".format(outpath, aeparams_file_name), map_location=torch.device('cuda', args.devices[0])),
         strict=False)
 
     dataloader_render = DataLoader(dataset, batch_size=batch_size, shuffle=False, drop_last=True, num_workers=nof_workers)

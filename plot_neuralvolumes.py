@@ -40,12 +40,20 @@ class NeuralVolumePlotter:
         template = torch.from_numpy(template)
         template = template.to(cur_device)
 
+
+
         volsampler = VolSampler()
         sample_rgb, sample_alpha = volsampler(pos=pos, template=template)
 
         sample_rgb = sample_rgb.cpu().numpy().reshape((batchsize, dimension, 3))
         sample_alpha = sample_alpha.cpu().numpy().reshape((batchsize, dimension, 1))
         pos = pos.cpu().numpy().reshape((batchsize, dimension, 3))
+
+        print(np.max(sample_rgb))
+        print(np.min(sample_rgb))
+
+        print(np.max(sample_alpha))
+        print(np.min(sample_alpha))
 
         sample_rgba = np.zeros((batchsize, dimension, 4))
         sample_rgba[:, :, 0:3] = sample_rgb
@@ -82,7 +90,7 @@ class NeuralVolumePlotter:
             nof_frames: int = 500):
         plotter_test: Plotter = pv.Plotter()
         prepare_template: Callable = self.__prepare_template_np_plot
-        density: float = 128.0
+        density: float = 32.0
         add_ground_truth_to_plotter: Callable = self.plot_stl_pyvista
 
         def slider_callback_create_points(value):
@@ -98,14 +106,18 @@ class NeuralVolumePlotter:
 
             if overwrite_color_to_black:
                 sample_rgba[:, :, :, :, 0:3] = np.zeros(sample_rgba[:, :, :, :, 0:3].shape)
+            else:
+                sample_rgba[:, :, :, :, 0:3] = sample_rgba[:, :, :, :, 0:3] / 255.
+                gamma_correction_value = (2. / 1.)
+                sample_rgba[:, :, :, :, 0:3] = sample_rgba[:, :, :, :, 0:3] ** gamma_correction_value
 
-            sample_rgba[:, :, :, :, 3] = sample_rgba[:, :, :, :, 3] / 255.
+            #sample_rgba[:, :, :, :, 3] = np.ones(sample_rgba[:, :, :, :, 3].shape) * 0.5
+
             grid = pv.StructuredGrid(x, y, z)
-
             # batchsize = sample_rgba.shape[0]
             # for i in range(batchsize):
-            sample_rgb = sample_rgba[0, :, :, :, 0:4].reshape((dimension, 4))
-            actor = plotter_test.add_points(grid.points, scalars=sample_rgb, rgb=True)
+            sample_rgba = sample_rgba[0, :, :, :, 0:4].reshape((dimension, 4))
+            actor = plotter_test.add_points(grid.points, scalars=sample_rgba, rgb=True)
             if add_ground_truth:
                 grid, mask = add_ground_truth_to_plotter("experiments/blenderLegMovement/data/groundtruth_test/frame{:04d}.stl".format(res))
                 plotter_test.add_points(grid.points, cmap=["#00000000", "#ff00004D"], scalars=mask)
@@ -119,11 +131,9 @@ class NeuralVolumePlotter:
 
 if __name__ == "__main__":
     plotter = NeuralVolumePlotter()
-    #filename = "experiments/blender2/20221212_180714_train_blender2_new_campos/templates"
-    filename = "experiments/blenderLegMovement/20221212_180942_train_blenderLeg_campos_adjusted/templates"
-    plotter.pyvista_3d_from_template_np(
-        filename,
-        overwrite_color_to_black=True,
+    filename = "experiments/blenderLegMovement/20221224_144646_blenderLegNormLoss/templates"
+    plotter.pyvista_3d_from_template_np(filename,
+        overwrite_color_to_black=False,
         add_ground_truth=False)
 
     #path_stl = "C:\\Users\\Flori\\Desktop\\Test-Export-Blender\\test0.stl"
