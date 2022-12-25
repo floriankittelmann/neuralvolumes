@@ -17,9 +17,12 @@ class Dataset(torch.utils.data.Dataset):
         self.camera = CameraSetupInBlender2(1)
         self.length = length
         self.period = period
-        self.width, self.height = 1024, 667
         if img_res_mode == Blender2Dataset.MODE_512x334_LOSSIMG_INPUT_RES:
             self.width, self.height = 512, 334
+        elif img_res_mode == Blender2Dataset.MODE_128x84:
+            self.width, self.height = 128, 84
+        else:
+            self.width, self.height = 1024, 668
 
         self.focal = np.array([
             self.camera.get_focal_length(self.height, self.width),
