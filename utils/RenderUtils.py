@@ -91,6 +91,8 @@ class RenderUtils:
 
         with torch.no_grad():
             for data in dataloader_render:
+                #print(data)
+                #exit()
                 b = next(iter(data.values())).size(0)
                 # forward
                 output = ae(iternum, [], **{k: x.to("cuda") for k, x in data.items()}, **profile.get_ae_args())

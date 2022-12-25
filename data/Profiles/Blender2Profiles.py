@@ -130,8 +130,8 @@ class Render:
 
         if self.cam == "rotate":
             dataset = self.get_dataset_func(camerafilter=lambda x: x == "000", maxframes=self.maxframes)
-            camdataset = cameralib.Dataset(len(dataset), self.resolution_mode, dataset)
-            dataset = data.utils.JoinDataset(camdataset, dataset)
+            dataset = cameralib.Dataset(len(dataset), dataset)
+            #dataset = data.utils.JoinDataset(camdataset, dataset)
         else:
             dataset = self.get_dataset_func(camerafilter=lambda x: x == self.cam, maxframes=self.maxframes)
         return dataset
