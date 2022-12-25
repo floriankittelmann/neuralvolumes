@@ -24,7 +24,7 @@ def writeimage(x):
     Image.fromarray(imgout).save(os.path.join(outpath, "{:06}.jpg".format(itemnum)))
 
 
-class Writer():
+class Writer:
     def __init__(
             self,
             outpath,
