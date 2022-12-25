@@ -31,7 +31,7 @@ class Writer():
             filename,
             showtarget=False,
             showdiff=False,
-            bgcolor=[0., 0., 0.],
+            bgcolor=[64., 64., 64.],
             colcorrect=[1., 1., 1.],
             nthreads=16,
             is_plot_batch=False
