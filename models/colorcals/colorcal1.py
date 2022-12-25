@@ -13,7 +13,6 @@ class Colorcal(nn.Module):
         super(Colorcal, self).__init__()
 
         self.allcameras = allcameras
-
         self.conv = nn.ModuleDict({
             k: nn.Conv2d(3, 3, 1, 1, 0, groups=3) for k in self.allcameras})
 

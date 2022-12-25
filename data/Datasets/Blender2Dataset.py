@@ -103,7 +103,7 @@ class Blender2Dataset(torch.utils.data.Dataset):
         elif loss_imgsize_mode == self.MODE_128x84:
             resize_param_loss_imgs = 8
         image = np.asarray(Image.open(imagepath), dtype=np.uint8)
-        return image[::resize_param_loss_imgs, ::resize_param_loss_imgs, :].astype(np.float32)
+        return image[::resize_param_loss_imgs, ::resize_param_loss_imgs, :].transpose((2, 0, 1)).astype(np.float32)
 
     def get_bg_img_path(self):
         return "experiments/blender2/data/bg.jpg"
@@ -129,7 +129,7 @@ class Blender2Dataset(torch.utils.data.Dataset):
     def get_background(self, bg) -> None:
         if "bg" in self.keyfilter:
             for i, cam in enumerate(self.cameras):
-                background = self.bg[cam].transpose((2, 0, 1))
+                background = self.bg[cam]
                 if cam in self.bg:
                     bg[cam].data[:] = torch.from_numpy(background).to("cuda")
 

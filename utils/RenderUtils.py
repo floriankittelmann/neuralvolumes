@@ -105,4 +105,4 @@ class RenderUtils:
                 iternum += 1
                 itemnum += b
         # cleanup
-        #render_writer.finalize()
+        render_writer.finalize()

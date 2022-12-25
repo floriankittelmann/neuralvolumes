@@ -127,12 +127,14 @@ class Render:
     def get_dataset(self):
         import data.utils
         import eval.cameras.rotate as cameralib
-        dataset = self.get_dataset_func(camerafilter=lambda x: x == self.cam, maxframes=self.maxframes)
+
         if self.cam == "rotate":
+            dataset = self.get_dataset_func(camerafilter=lambda x: x == "000", maxframes=self.maxframes)
             camdataset = cameralib.Dataset(len(dataset), self.resolution_mode, dataset)
-            return data.utils.JoinDataset(camdataset, dataset)
+            dataset = data.utils.JoinDataset(camdataset, dataset)
         else:
-            return dataset
+            dataset = self.get_dataset_func(camerafilter=lambda x: x == self.cam, maxframes=self.maxframes)
+        return dataset
 
     def get_writer(self, outpath, nthreads=16, is_plot_batch=False):
         import eval.writers.videowriter as writerlib

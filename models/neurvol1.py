@@ -29,7 +29,6 @@ class Autoencoder(nn.Module):
             estimatebg: bool = False
     ):
         super(Autoencoder, self).__init__()
-
         self.estimatebg = estimatebg
         self.allcameras = dataset.get_allcameras()
 
@@ -42,9 +41,6 @@ class Autoencoder(nn.Module):
         self.colorcal = colorcal
         self.dt = dt
         self.stepjitter = stepjitter
-
-        self.imagemean = dataset.imagemean
-        self.imagestd = dataset.imagestd
 
         if dataset.known_background():
             dataset.get_background(self.bg)
@@ -62,9 +58,10 @@ class Autoencoder(nn.Module):
                 image=None, imagevalid=None, viewtemplate=False,
                 outputlist=[]):
         result = {"losses": {}}
-        # encode input or get encoding
 
+        # encode input or get encoding
         if encoding is None:
+            print(fixedcamimage.shape)
             encout = self.encoder(fixedcamimage, losslist)
             encoding = encout["encoding"]
             result["losses"].update(encout["losses"])
@@ -90,7 +87,6 @@ class Autoencoder(nn.Module):
                     samplecoords)
             else:
                 bg = torch.stack([self.bg[self.allcameras[camindex[i].item()]] for i in range(campos.size(0))], dim=0)
-
             rayrgb = rayrgb + (1. - rayalpha) * bg.clamp(min=0.)
 
         if "irgbrec" in outputlist:
@@ -111,8 +107,8 @@ class Autoencoder(nn.Module):
                 image = F.grid_sample(image, samplecoords)
 
             # standardize
-            #rayrgb = (rayrgb - self.imagemean) / self.imagestd
-            #image = (image - self.imagemean) / self.imagestd
+            # rayrgb = (rayrgb - self.imagemean) / self.imagestd
+            # image = (image - self.imagemean) / self.imagestd
             rayrgb = rayrgb / 255. * 2. - 1.
             image = image / 255. * 2. - 1.
 
