@@ -72,7 +72,12 @@ class DatasetConfig:
         return Autoencoder(
             dataset=dataset,
             encoder=encoderlib.Encoder(3, encoder_input_mod=self.encoder_mode_res),
-            decoder=decoderlib.Decoder(globalwarp=True, warptype="conv", viewconditioned=False, templateres=template_size),
+            decoder=decoderlib.Decoder(
+                globalwarp=True,
+                warptype="affinemix",
+                templatetype="conv",
+                viewconditioned=False,
+                templateres=template_size),
             volsampler=volsamplerlib.VolSampler(),
             colorcal=colorcalib.Colorcal(dataset.get_allcameras()),
             dt=raymarching_dt)
