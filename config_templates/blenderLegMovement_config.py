@@ -73,9 +73,9 @@ class DatasetConfig:
             dataset=dataset,
             encoder=encoderlib.Encoder(3, encoder_input_mod=self.encoder_mode_res),
             decoder=decoderlib.Decoder(
-                globalwarp=True,
-                warptype="affinemix",
-                templatetype="conv",
+                globalwarp=False,
+                warptype=None,
+                templatetype="affinemix",
                 viewconditioned=False,
                 templateres=template_size),
             volsampler=volsamplerlib.VolSampler(),
