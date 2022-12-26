@@ -73,8 +73,8 @@ class DatasetConfig:
             dataset=dataset,
             encoder=encoderlib.Encoder(3, encoder_input_mod=self.encoder_mode_res),
             decoder=decoderlib.Decoder(
-                globalwarp=False,
-                warptype=None,
+                globalwarp=True,
+                warptype="affinemix",
                 templatetype="affinemix",
                 viewconditioned=True,
                 templateres=template_size),
