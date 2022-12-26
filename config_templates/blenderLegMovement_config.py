@@ -76,7 +76,7 @@ class DatasetConfig:
                 globalwarp=False,
                 warptype=None,
                 templatetype="affinemix",
-                viewconditioned=False,
+                viewconditioned=True,
                 templateres=template_size),
             volsampler=volsamplerlib.VolSampler(),
             colorcal=colorcalib.Colorcal(dataset.get_allcameras()),
