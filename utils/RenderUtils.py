@@ -39,6 +39,9 @@ class RenderUtils:
         parser.add_argument('--nofworkers', type=int, default=16, help='nofworkers')
         parser.add_argument('--cam', type=str, default="rotate", help='camera mode to render')
         parser.add_argument('--iteration', type=int, default=None, help='iteration of aeparams to choose')
+        parser.add_argument('--startframe', type=int, default=None, help='start rendering from frame')
+        parser.add_argument('--endframe', type=int, default=None, help='end rendering frame')
+        parser.add_argument('--traindataset', action='store_true', help='use train dataset to render instead test dataset')
         parsed, unknown = parser.parse_known_args()
         for arg in unknown:
             if arg.startswith(("-", "--")):
