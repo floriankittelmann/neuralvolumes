@@ -6,7 +6,6 @@
 #
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from models.decoders.AffineMixWarp import AffineMixWarp
 from models.decoders.ConvTemplate import ConvTemplate
 from models.decoders.LinearTemplate import LinearTemplate
@@ -33,9 +32,16 @@ def getwarp(warptype, **kwargs):
 
 
 class Decoder(nn.Module):
-    def __init__(self, templatetype="conv", templateres=128,
-                 viewconditioned=False, globalwarp=True, warptype="affinemix",
-                 displacementwarp=False):
+    def __init__(
+            self,
+            templatetype="conv",
+            templateres=128,
+            viewconditioned=False,
+            globalwarp=True,
+            warptype="affinemix",
+            displacementwarp=False,
+            frameindexinfo=False
+    ):
         super(Decoder, self).__init__()
         self.templatetype = templatetype
         self.templateres = templateres
@@ -43,14 +49,19 @@ class Decoder(nn.Module):
         self.globalwarp = globalwarp
         self.warptype = warptype
         self.displacementwarp = displacementwarp
+        self.frameindexinfo = frameindexinfo
+
+        encodingsize = 256
+        if self.frameindexinfo:
+            encodingsize = encodingsize + 1
 
         if self.viewconditioned:
-            self.template = gettemplate(self.templatetype, encodingsize=256 + 3,
+            self.template = gettemplate(self.templatetype, encodingsize=encodingsize + 3,
                                         outchannels=3, templateres=self.templateres)
             self.templatealpha = gettemplate(self.templatetype, encodingsize=256,
                                              outchannels=1, templateres=self.templateres)
         else:
-            self.template = gettemplate(self.templatetype, templateres=self.templateres)
+            self.template = gettemplate(self.templatetype, encodingsize=encodingsize, templateres=self.templateres)
 
         self.warp = getwarp(self.warptype, displacementwarp=self.displacementwarp)
 
@@ -71,10 +82,12 @@ class Decoder(nn.Module):
             for m in [self.gwarps, self.gwarpr, self.gwarpt]:
                 initseq(m)
 
-    def forward(self, encoding, viewpos, losslist=[]):
+    def forward(self, encoding, viewpos, frameindex, losslist=[]):
         # run template branch
         viewdir = viewpos / torch.sqrt(torch.sum(viewpos ** 2, dim=-1, keepdim=True))
         templatein = torch.cat([encoding, viewdir], dim=1) if self.viewconditioned else encoding
+        frameindex = torch.reshape(frameindex, (frameindex.size()[0], 1))
+        templatein = torch.cat([templatein, frameindex], dim=1) if self.frameindexinfo else templatein
         template = self.template(templatein)
         if self.viewconditioned:
             # run alpha branch without viewpoint information

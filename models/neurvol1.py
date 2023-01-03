@@ -9,7 +9,7 @@ import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.RayMarchingHelper import init_with_camera_position, init_section_view
+from models.RayMarchingHelper import init_with_camera_position
 from models.colorcals.colorcal1 import Colorcal
 from models.decoders.voxel1 import Decoder
 from models.encoders.mvconv1 import Encoder
@@ -55,8 +55,7 @@ class Autoencoder(nn.Module):
 
     def forward(self, iternum, losslist, camrot, campos, focal, princpt, pixelcoords, validinput,
                 fixedcamimage=None, encoding=None, keypoints=None, camindex=None,
-                image=None, imagevalid=None, viewtemplate=False,
-                outputlist=[]):
+                image=None, imagevalid=None, viewtemplate=False, frameindex=None, outputlist=[]):
         result = {"losses": {}}
 
         # encode input or get encoding
@@ -66,7 +65,7 @@ class Autoencoder(nn.Module):
             result["losses"].update(encout["losses"])
 
         # decode
-        decout = self.decoder(encoding, campos, losslist)
+        decout = self.decoder(encoding=encoding, viewpos=campos, frameindex=frameindex, losslist=losslist)
         result["losses"].update(decout["losses"])
         result["decout"] = decout
 
