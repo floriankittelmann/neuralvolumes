@@ -1,4 +1,4 @@
-from eval.NeuralVolumePlotter import NeuralVolumePlotter
+from eval.NeuralVolumePlotter.NeuralVolumePlotter import NeuralVolumePlotter
 from utils.RenderUtils import RenderUtils
 import os.path
 

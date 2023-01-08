@@ -1,9 +1,7 @@
-import math
-
 import numpy as np
-from eval.CoordinateSystem import CoordinateSystem
-from eval.GlobalCoordinateSystem import GlobalCoordinateSystem
-from eval.CubePlotter import CubePlotter
+from eval.CameraPlotter.CoordinateSystem import CoordinateSystem
+from eval.CameraPlotter.GlobalCoordinateSystem import GlobalCoordinateSystem
+from eval.CameraPlotter.CubePlotter import CubePlotter
 from config_templates.blender2_config import DatasetConfig as DatasetConfigBlender2
 from config_templates.blenderLegMovement_config import DatasetConfig as DatasetConfigLegM
 from config_templates.dryice1_config import get_dataset as get_dataset_dryice

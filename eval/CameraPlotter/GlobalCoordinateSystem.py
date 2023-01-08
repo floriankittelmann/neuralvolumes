@@ -1,4 +1,4 @@
-from eval.CoordinateSystem import CoordinateSystem
+from eval.CameraPlotter.CoordinateSystem import CoordinateSystem
 from scipy.spatial.transform import Rotation
 
 

@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.spatial.transform import Rotation
-from eval.Arrow3D import Arrow3D
+from eval.CameraPlotter.Arrow3D import Arrow3D
 
 
 class CoordinateSystem:

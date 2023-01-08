@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 import os
 
 from config_templates.blender2_config import DatasetConfig
-from eval.NeuralVolumePlotter import NeuralVolumePlotter
+from eval.NeuralVolumePlotter.NeuralVolumePlotter import NeuralVolumePlotter
 from utils.EnvUtils import EnvUtils
 from utils.ImportConfigUtil import ImportConfigUtil
 from utils.RenderUtils import RenderUtils

@@ -1,4 +1,4 @@
-from eval.CameraSetupPlotter import CameraSetupPlotter
+from eval.CameraPlotter.CameraSetupPlotter import CameraSetupPlotter
 import argparse
 
 if __name__ == "__main__":
