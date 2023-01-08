@@ -65,6 +65,9 @@ class Autoencoder(nn.Module):
             result["losses"].update(encout["losses"])
 
         # decode
+        cur_device = torch.cuda.current_device()
+        if frameindex.dtype == torch.float64:
+            frameindex = frameindex.type(torch.FloatTensor).to(cur_device)
         decout = self.decoder(encoding=encoding, viewpos=campos, frameindex=frameindex, losslist=losslist)
         result["losses"].update(decout["losses"])
         result["decout"] = decout
