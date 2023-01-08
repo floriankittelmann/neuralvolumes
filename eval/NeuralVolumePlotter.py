@@ -20,7 +20,7 @@ class NeuralVolumePlotter:
 
     def get_uniform_positions(self, decout: dict) -> torch.Tensor:
         template: torch.Tensor = decout['template']
-        template: np.ndarray = template.cpu().numpy()
+        batchsize = template.size()[0]
         density: float = float(self.resolution)
         min: float = -1.0
         max: float = 1.0
@@ -28,13 +28,35 @@ class NeuralVolumePlotter:
         x, y, z = np.meshgrid(distribution, distribution, distribution)
         pos = np.stack((x, y, z), axis=3)
         dimension = int(density ** 3)
-        batchsize = template.shape[0]
         pos = np.array([pos for i in range(batchsize)])
         pos = pos.reshape((batchsize, 1, dimension, 1, 3))
         torch.cuda.set_device("cuda:0")
         cur_device = torch.cuda.current_device()
         pos = torch.from_numpy(pos)
         return pos.to(cur_device)
+
+    def get_dist_volume(
+            self,
+            pos: torch.Tensor,
+            decout: dict
+    ):
+        volsampler: VolSampler = VolSampler()
+        sample_rgb, sample_alpha = volsampler(pos=pos, **decout)
+        sample_rgb: np.ndarray = sample_rgb.cpu().numpy()
+        sample_alpha: np.ndarray = sample_alpha.cpu().numpy()
+        pos: np.ndarray = pos.cpu().numpy()
+        shape: tuple = sample_rgb.shape
+        nof_data_points = shape[3]
+
+        batchsize = shape[0]
+        sample_rgba: np.ndarray = np.zeros((batchsize, nof_data_points, 4))
+
+        sample_rgb = sample_rgb.reshape((batchsize, nof_data_points, 3))
+        sample_alpha = sample_alpha.reshape((batchsize, nof_data_points))
+        sample_rgba[:, :, 0:3] = sample_rgb
+        sample_rgba[:, :, 3] = sample_alpha
+        pos = pos.reshape((batchsize, nof_data_points, 3))
+        return pos, sample_rgba
 
     def save_uniform_dist_volume(self, decout: dict, frameidx: int):
         pos: torch.Tensor = self.get_uniform_positions(decout)
@@ -76,30 +98,13 @@ class NeuralVolumePlotter:
         pos: torch.Tensor = torch.from_numpy(raypos_appended)
         self.save_volume_and_pos(pos, decout, frameidx)
 
-
     def save_volume_and_pos(
             self,
             pos: torch.Tensor,
             decout: dict,
             frameidx: int
     ):
-        volsampler: VolSampler = VolSampler()
-        sample_rgb, sample_alpha = volsampler(pos=pos, **decout)
-        sample_rgb: np.ndarray = sample_rgb.cpu().numpy()
-        sample_alpha: np.ndarray = sample_alpha.cpu().numpy()
-        pos: np.ndarray = pos.cpu().numpy()
-        shape: tuple = sample_rgb.shape
-        nof_data_points = shape[3]
-
-        batchsize = shape[0]
-        sample_rgba: np.ndarray = np.zeros((batchsize, nof_data_points, 4))
-
-        sample_rgb = sample_rgb.reshape((batchsize, nof_data_points, 3))
-        sample_alpha = sample_alpha.reshape((batchsize, nof_data_points))
-        sample_rgba[:, :, 0:3] = sample_rgb
-        sample_rgba[:, :, 3] = sample_alpha
-        pos = pos.reshape((batchsize, nof_data_points, 3))
-
+        pos, sample_rgba = self.get_dist_volume(pos=pos, decout=decout)
         name = "_{}_{}.npy".format(self.resolution, frameidx)
 
         path_volume = os.path.join(self.output_path, "volume{}".format(name))
@@ -158,7 +163,6 @@ class NeuralVolumePlotter:
             list_templates.append(volume)
             list_positions.append(positions)
         print("finish load templates")
-
 
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
