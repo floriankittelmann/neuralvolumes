@@ -3,7 +3,7 @@ import os.path
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
-
+import pyvista as pv
 from models.volsamplers.warpvoxel import VolSampler
 from models.RayMarchingHelper import init_with_camera_position, RayMarchingHelper
 from eval.neural_volumes_plotter_helper import set_background_values_transparent, exclude_by_hsv, plot_hists
@@ -133,7 +133,6 @@ class NeuralVolumePlotter:
             mask = temp_data[:, 4].astype(bool)
             volume = volume[mask, :]
             positions = positions[mask, :]
-
         print(volume.shape)
 
         x = positions[:, 0]
@@ -148,27 +147,86 @@ class NeuralVolumePlotter:
 
         return plot_axis.scatter3D(x, y, z, c=volume)
 
-    def plot_frames(self):
-        list_templates = []
-        list_positions = []
-        print("load templates")
-        for idx in range(99):
-            name = "_{}_{}.npy".format(self.resolution, idx)
-            path_volume = os.path.join(self.output_path, "volume{}".format(name))
-            with open(path_volume, 'rb') as f:
-                volume = np.load(f)
-            path_pos = os.path.join(self.output_path, "pos{}".format(name))
-            with open(path_pos, 'rb') as f:
-                positions = np.load(f)
-            list_templates.append(volume)
-            list_positions.append(positions)
-        print("finish load templates")
+    def plot_stl_pyvista(self, filenameMesh: str):
+        mesh = pv.read(filenameMesh)
+
+        min, max = -100, 100
+        density = 200. / float(self.resolution)
+        x = np.arange(min, max, density)
+        y = np.arange(min, max, density)
+        z = np.arange(min, max, density)
+        x, y, z = np.meshgrid(x, y, z)
+
+        # Create unstructured grid from the structured grid
+        grid = pv.StructuredGrid(x, y, z)
+        ugrid = pv.UnstructuredGrid(grid)
+
+        # get part of the mesh within the mesh's bounding surface.
+        selection = ugrid.select_enclosed_points(mesh.extract_surface(), tolerance=0.0, check_surface=False)
+
+        grid = pv.StructuredGrid(x / 100., y / 100., z / 100.)
+        mask = selection.point_data['SelectedPoints'].view(bool).reshape((self.resolution**3))
+        print(mask.shape)
+
+        alpha = np.zeros((mask.shape[0], 1))
+        alpha[mask, 0] = 1.
+
+        colors = np.ones((mask.shape[0], 3))
+        colors[mask, 1] = 0.
+        colors[mask, 2] = 0.
+
+        print(colors.shape)
+        print(alpha.shape)
+
+        volume = np.concatenate((colors, alpha), axis=1)
 
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
-        artist = None
-        for frameidx in range(100):
-            if artist:
-                artist.remove()
-            artist = self.__plot_one_frame(frameidx, ax, list_templates, list_positions)
-            plt.pause(1.0)
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_zlabel('z')
+        x = grid.points[:, 0]
+        y = grid.points[:, 1]
+        z = grid.points[:, 2]
+        ax.scatter3D(x, y, z, c=volume)
+        plt.show()
+
+    def plot_frames(self):
+        stl_plot = False
+        if stl_plot:
+            path = "experiments/blenderLegMovement/data/groundtruth_train/frame0000.stl"
+            self.plot_stl_pyvista(path)
+        else:
+            list_templates = []
+            list_positions = []
+            print("load templates")
+            for idx in range(99):
+                name = "_{}_{}.npy".format(self.resolution, idx)
+                path_volume = os.path.join(self.output_path, "volume{}".format(name))
+                with open(path_volume, 'rb') as f:
+                    volume = np.load(f)
+                path_pos = os.path.join(self.output_path, "pos{}".format(name))
+                with open(path_pos, 'rb') as f:
+                    positions = np.load(f)
+                list_templates.append(volume)
+                list_positions.append(positions)
+            print("finish load templates")
+
+            is_implemented_animation = False
+            if not is_implemented_animation:
+                fig = plt.figure()
+                ax = fig.add_subplot(projection='3d')
+                ax.set_xlabel('x')
+                ax.set_ylabel('y')
+                ax.set_zlabel('z')
+                artist = self.__plot_one_frame(0, ax, list_templates, list_positions)
+                plt.show()
+            else:
+                fig = plt.figure()
+                ax = fig.add_subplot(projection='3d')
+                artist = None
+                for frameidx in range(100):
+                    if artist:
+                        artist.remove()
+                    artist = self.__plot_one_frame(frameidx, ax, list_templates, list_positions)
+                    plt.pause(1.0)

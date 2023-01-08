@@ -62,26 +62,6 @@ class TestPlot:
         sample_rgba = sample_rgba.reshape((batchsize, int(density), int(density), int(density), 4))
         return pos, sample_rgba.astype(float), dimension
 
-    def plot_stl_pyvista(self, filenameMesh: str):
-        mesh = pv.read(filenameMesh)
-
-        density = mesh.length / 100
-        x_min, x_max, y_min, y_max, z_min, z_max = mesh.bounds
-        x = np.arange(x_min, x_max, density)
-        y = np.arange(y_min, y_max, density)
-        z = np.arange(z_min, z_max, density)
-        x, y, z = np.meshgrid(x, y, z)
-
-        # Create unstructured grid from the structured grid
-        grid = pv.StructuredGrid(x, y, z)
-        ugrid = pv.UnstructuredGrid(grid)
-
-        grid = pv.StructuredGrid(x / 100., y / 100., z / 100.)
-        # get part of the mesh within the mesh's bounding surface.
-        selection = ugrid.select_enclosed_points(mesh.extract_surface(), tolerance=0.0, check_surface=False)
-        mask = selection.point_data['SelectedPoints'].view(bool)
-        mask = mask.reshape(x.shape)
-        return grid, mask
 
     def pyvista_3d_from_template_np(
             self,
