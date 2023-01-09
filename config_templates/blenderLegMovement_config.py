@@ -81,7 +81,7 @@ class DatasetConfig:
                 templatetype="affinemix",
                 viewconditioned=True,
                 templateres=template_size,
-                frameindexinfo=True
+                frameindexinfo=False
             ),
             volsampler=volsamplerlib.VolSampler(),
             colorcal=colorcalib.Colorcal(dataset.get_allcameras()),
