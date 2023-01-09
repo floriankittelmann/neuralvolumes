@@ -67,15 +67,6 @@ if __name__ == "__main__":
         for data in train_dataloader:
             # forward
             output = ae(iternum, lossweights.keys(), **{k: x.to("cuda") for k, x in data.items()})
-
-            # ground truth loss
-            """nv_builder = NeuralVolumeBuilder(
-                resolution=trainprofile.gt_resolution,
-                frameidx=1,
-                train_test_mode=NeuralVolumeBuilder.MODE_TRAIN_DATASET)
-            nv_builder.calculate_mse_loss_from_decout(output['decout'])
-            output["losses"]["gtloss"] = 1.0"""
-
             train_loss = train_utils.calculate_final_loss_from_output(output, lossweights)
 
             starttime = train_utils.print_iteration_infos(
@@ -101,6 +92,7 @@ if __name__ == "__main__":
             testoutput = None
             np_img = None
             test_batch = None
+            ground_truth_loss_test = None
             # save intermediate results
             if iternum % 1000 == 0 or iternum in [0, 1, 2, 3, 4, 5]:
                 test_batch, testoutput = train_utils.get_testbatch_testoutput(
@@ -112,6 +104,8 @@ if __name__ == "__main__":
                 )
                 test_loss = train_utils.calculate_final_loss_from_output(testoutput, lossweights)
 
+                if 'ground_truth_loss' in testoutput.keys():
+                    ground_truth_loss_test = testoutput['ground_truth_loss']
                 np_img = train_utils.save_model_and_validation_pictures(
                     iternum=iternum,
                     outpath=outpath,
@@ -122,6 +116,9 @@ if __name__ == "__main__":
                     data=data,
                     writer=writer)
 
+            ground_truth_loss_train = None
+            if 'ground_truth_loss' in output.keys():
+                ground_truth_loss_train = output['ground_truth_loss']
             train_utils.save_wandb_info(
                 iternum=iternum,
                 train_loss=train_loss,
@@ -129,6 +126,8 @@ if __name__ == "__main__":
                 test_loss=test_loss,
                 test_output=testoutput,
                 validation_img=np_img,
+                ground_truth_loss_train=ground_truth_loss_train,
+                ground_truth_loss_test=ground_truth_loss_test,
                 wandb=wandb)
 
             iternum += 1

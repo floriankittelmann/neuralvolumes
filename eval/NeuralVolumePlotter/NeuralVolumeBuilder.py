@@ -23,10 +23,8 @@ class NeuralVolumeBuilder:
         dimension = int(self.resolution ** 3)
         pos = np.array([pos for i in range(batchsize)])
         pos = pos.reshape((batchsize, 1, dimension, 1, 3))
-        torch.cuda.set_device("cuda:0")
         cur_device = torch.cuda.current_device()
-        pos = torch.from_numpy(pos)
-        return pos.to(cur_device)
+        return torch.from_numpy(pos).to(cur_device)
 
     def get_nv_from_model_output(self, decout: dict):
         """
@@ -37,8 +35,8 @@ class NeuralVolumeBuilder:
         pos: torch.Tensor = self.__get_uniform_positions_torch(decout)
         volsampler: VolSampler = VolSampler()
         sample_rgb, sample_alpha = volsampler(pos=pos, **decout)
-        sample_rgb: np.ndarray = sample_rgb.cpu().numpy()
-        sample_alpha: np.ndarray = sample_alpha.cpu().numpy()
+        sample_rgb: np.ndarray = sample_rgb.cpu().detach().numpy()
+        sample_alpha: np.ndarray = sample_alpha.cpu().detach().numpy()
         pos: np.ndarray = pos.cpu().numpy()
         shape: tuple = sample_rgb.shape
         nof_data_points = shape[3]

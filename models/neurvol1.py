@@ -10,6 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from eval.NeuralVolumePlotter.GroundTruthLoss import GroundTruthLoss
 from eval.NeuralVolumePlotter.NeuralVolumeBuilder import NeuralVolumeBuilder
 from models.RayMarchingHelper import init_with_camera_position
 from models.colorcals.colorcal1 import Colorcal
@@ -28,11 +29,13 @@ class Autoencoder(nn.Module):
             colorcal: Colorcal,
             dt: float,
             stepjitter: float = 0.01,
-            estimatebg: bool = False
+            estimatebg: bool = False,
+            ground_truth_resolution: int = None
     ):
         super(Autoencoder, self).__init__()
         self.estimatebg = estimatebg
         self.allcameras = dataset.get_allcameras()
+        self.ground_truth_resolution = ground_truth_resolution
 
         self.encoder = encoder
         self.decoder = decoder
@@ -106,8 +109,10 @@ class Autoencoder(nn.Module):
                 torch.log(0.1 + 1. - rayalpha.view(rayalpha.size(0), -1)) - -2.20727, dim=-1)
             result["losses"]["alphapr"] = alphaprior
 
-        if gt_volume is not None and gt_positions is not None:
-            print("calc loss")
+        if gt_volume is not None and gt_positions is not None and self.ground_truth_resolution is not None:
+            truth = GroundTruthLoss(decout, gt_positions, gt_volume, self.ground_truth_resolution)
+            loss = truth.calculate_mse_loss()
+            result['ground_truth_loss'] = loss
 
         # irgb loss
         if image is not None:

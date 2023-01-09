@@ -1,47 +1,38 @@
 import numpy as np
 import torch
 
-def calculate_mse_loss(
-        pos_model: np.ndarray,
-        nv_model: np.ndarray,
-        pos_truth: np.ndarray,
-        nv_truth: np.ndarray,
-        resolution: int):
-    batchsize = pos_model.size()[0]
-
-    nv_model = nv_model.reshape((batchsize, resolution ** 3, 4))
-    pos_model = pos_model.reshape((batchsize, resolution ** 3, 3))
-
-    nv_truth = nv_truth.reshape((batchsize, resolution ** 3, 4))
-    pos_truth = pos_truth.reshape((batchsize, resolution ** 3, 3))
-
-    pos_model, nv_model = sort_nv(pos_model, nv_model)
-    pos_truth, nv_truth = sort_nv(pos_truth, nv_truth)
-
-    loss = np.mean((nv_truth * 255. - nv_model * 255.) ** 2)
-    print(loss)
-    return loss
+from eval.NeuralVolumePlotter.NeuralVolumeBuilder import NeuralVolumeBuilder
 
 
-def sort_nv(pos: np.ndarray, nv: np.ndarray):
-    ind = np.lexsort((pos[:, 0], pos[:, 1], pos[:, 2]))
-    return pos[ind], nv[ind]
+def sort_nv(each_batch: np.ndarray):
+    """
+        used to sort each batch individual
+    """
+    ind = np.lexsort((each_batch[:, 0], each_batch[:, 1], each_batch[:, 2]))
+    return each_batch[ind]
 
 
-def calculate_mse_loss_from_decout(decout: dict, gt_from_dataloader: torch.Tensor):
-    pos_model, nv_model = get_nv_from_model_output(decout)
-    ground_truth = gt_from_dataloader.cpu().numpy()
-    pos_ground_truth = ground_truth[:, 0:3, :, :, :, :, :]
-    nv_ground_truth = ground_truth[:, 3:7, :, :, :, :, :, :, :]
-    return calculate_mse_loss(pos_model, nv_model, pos_ground_truth, nv_ground_truth)
+class GroundTruthLoss:
 
+    def __init__(self, decout: dict, pos_truth: torch.Tensor, volume_truth: torch.Tensor, resolution: int):
+        self.decout = decout
+        self.pos_truth = pos_truth
+        self.volume_truth = volume_truth
+        self.nv_builder = NeuralVolumeBuilder(resolution)
 
-def calculate_mse_loss_from_cached_data(
-        self,
-        list_templates: list,
-        list_pos: list,
-        gt_path: str):
-    pos_model: np.ndarray = list_pos[self.frameidx]
-    nv_model: np.ndarray = list_templates[self.frameidx]
-    pos_ground_truth, nv_ground_truth = get_nv_ground_truth(gt_path, self.resolution)
-    return calculate_mse_loss(pos_model, nv_model, pos_ground_truth, nv_ground_truth)
+    def calculate_mse_loss(self):
+        pos_model, volume_model = self.nv_builder.get_nv_from_model_output(self.decout)
+        pos_truth = self.pos_truth.cpu().numpy()
+        volume_truth = self.volume_truth.cpu().numpy()
+
+        pos_nv_model = np.concatenate((pos_model, volume_model), axis=2)
+        pos_nv_truth = np.concatenate((pos_truth, volume_truth), axis=2)
+
+        #sort array x,y,z coordinates
+        pos_nv_model = np.array(list(map(sort_nv, pos_nv_model)))
+        pos_nv_truth = np.array(list(map(sort_nv, pos_nv_truth)))
+
+        volume_model_sorted = pos_nv_model[:, :, 3:7]
+        pos_truth_sorted = pos_nv_truth[:, :, 3:7]
+        loss = np.mean((pos_truth_sorted - volume_model_sorted)**2)
+        return loss
