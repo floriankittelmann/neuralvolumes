@@ -2,9 +2,9 @@ import time
 
 import torch.utils.data
 from torch.utils.data import DataLoader
-import os
 
 from config_templates.blender2_config import DatasetConfig
+from eval.NeuralVolumePlotter.NeuralVolumeBuilder import NeuralVolumeBuilder
 from eval.NeuralVolumePlotter.NeuralVolumePlotter import NeuralVolumePlotter
 from utils.EnvUtils import EnvUtils
 from utils.ImportConfigUtil import ImportConfigUtil
@@ -19,15 +19,20 @@ if __name__ == "__main__":
     experconfig = import_config_util.import_module(args.experconfig)
 
     ds_config: DatasetConfig = experconfig.DatasetConfig()
-    profile = ds_config.get_render_profile()
+
+    if args.traindataset:
+        profile = ds_config.get_train_profile()
+        mode = NeuralVolumeBuilder.MODE_TRAIN_DATASET
+    else:
+        profile = ds_config.get_render_profile()
+        mode = NeuralVolumeBuilder.MODE_TEST_DATASET
+
+    resolution: int = 64
+    plotter = NeuralVolumePlotter(outpath, resolution, mode)
 
     env_utils = EnvUtils()
-    nof_workers = args.nofworkers
-    batch_size = profile.batchsize
-    if env_utils.is_local_env():
-        nof_workers = 1
-        batch_size = 3
     batch_size = 1
+    nof_workers = 8
     dataset = profile.get_dataset()
     ae = profile.get_autoencoder(dataset)
     torch.cuda.set_device(args.devices[0])
@@ -47,25 +52,17 @@ if __name__ == "__main__":
         shuffle=False,
         drop_last=True,
         num_workers=nof_workers)
-    # render_writer = profile.get_writer(outpath=outpath, nthreads=batch_size, is_plot_batch=True)
+
     iternum = 0
     itemnum = 0
     starttime = time.time()
 
-    outpath_np_folder = os.path.join(outpath, "decout")
-    try:
-        os.makedirs(outpath_np_folder)
-    except OSError:
-        pass
-
-    resolution: int = 64
-    plotter = NeuralVolumePlotter(outpath_np_folder, resolution)
     imgindex = 0
     with torch.no_grad():
         for data in dataloader_render:
             b = next(iter(data.values())).size(0)
             # forward
-            output = ae(iternum, [], **{k: x.to("cuda") for k, x in data.items()}, **profile.get_ae_args())
+            output = ae(iternum, [], **{k: x.to("cuda") for k, x in data.items()})
             decout_main = output['decout']
 
             plotter.save_volume_and_pos(decout=decout_main, frameidx=imgindex)

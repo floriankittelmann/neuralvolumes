@@ -37,7 +37,7 @@ class NeuralVolumeBuilder:
     def get_nv_from_model_output(self, decout: dict):
         """
             returns positions (x,y,z) and neuralvolumes (r,g,b,a)
-            pos: x,y,z coordinates in m
+            pos: batchsize,x,y,z coordinates in m
             nv: r,g,b,a in the scale from 0-1
         """
         pos: torch.Tensor = self.__get_uniform_positions_torch(decout)
@@ -110,8 +110,9 @@ class NeuralVolumeBuilder:
             pos_truth: np.ndarray,
             nv_truth: np.ndarray
     ):
-        nv_model = nv_model.reshape((self.resolution ** 3, 4))
-        pos_model = pos_model.reshape((self.resolution ** 3, 3))
+        batchsize = nv_model.shape[0]
+        nv_model = nv_model.reshape((batchsize * self.resolution ** 3, 4))
+        pos_model = pos_model.reshape((batchsize * self.resolution ** 3, 3))
 
         pos_model, nv_model = self.__sort_nv(pos_model, nv_model)
         pos_truth, nv_truth = self.__sort_nv(pos_truth, nv_truth)
@@ -126,7 +127,7 @@ class NeuralVolumeBuilder:
         ind = np.lexsort((pos[:, 0], pos[:, 1], pos[:, 2]))
         return pos[ind], nv[ind]
 
-    def calculate_mse_loss_from_decout(self, decout: dict):
+    def calculate_mse_loss_from_decout(self, decout: dict, frameidx: torch.Tensor):
         pos_model, nv_model = self.get_nv_from_model_output(decout)
         pos_ground_truth, nv_ground_truth = self.get_nv_ground_truth()
         return self.__calculate_mse_loss(pos_model, nv_model, pos_ground_truth, nv_ground_truth)

@@ -9,6 +9,8 @@ import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from eval.NeuralVolumePlotter.NeuralVolumeBuilder import NeuralVolumeBuilder
 from models.RayMarchingHelper import init_with_camera_position
 from models.colorcals.colorcal1 import Colorcal
 from models.decoders.voxel1 import Decoder
@@ -94,6 +96,11 @@ class Autoencoder(nn.Module):
             result["irgbrec"] = rayrgb
         if "ialpharec" in outputlist:
             result["ialpharec"] = rayalpha
+
+        # ground truth loss
+        """resolution = 64
+        nv_builder = NeuralVolumeBuilder(resolution=resolution)
+        result["losses"]["gtloss"] = 1.0"""
 
         # opacity prior
         if "alphapr" in losslist:

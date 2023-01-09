@@ -17,12 +17,28 @@ class NeuralVolumePlotter:
     # transparent voxels can not be seen anyway with the our eyes
     EXCLUDE_TRANSPARENT_POINTS = True
 
-    def __init__(self, output_path: str, resolution: int):
-        self.output_path: str = output_path
+    def __init__(self, config_path: str, resolution: int, mode: int):
+        self.output_path = self.__create_and_get_decout_output_path(config_path, mode)
         self.resolution: int = resolution
+        self.mode = mode
+
+    def __create_and_get_decout_output_path(self, config_path: str, mode: int):
+        if mode == NeuralVolumeBuilder.MODE_TRAIN_DATASET:
+            caption = "train"
+        elif mode == NeuralVolumeBuilder.MODE_TEST_DATASET:
+            caption = "test"
+        else:
+            raise Exception("mode is not known")
+        output_path = os.path.join(config_path, "decout_{}".format(caption))
+        try:
+            os.makedirs(output_path)
+        except OSError:
+            pass
+        return output_path
+
 
     def save_volume_and_pos(self, decout: dict, frameidx: int):
-        nv_builder = NeuralVolumeBuilder(self.resolution, frameidx, NeuralVolumeBuilder.MODE_TRAIN_DATASET)
+        nv_builder = NeuralVolumeBuilder(self.resolution, frameidx, self.mode)
         pos, volume = nv_builder.get_nv_from_model_output(decout)
         name = "_{}_{}.npy".format(self.resolution, frameidx)
 
@@ -54,7 +70,7 @@ class NeuralVolumePlotter:
         return plot_axis.scatter3D(x, y, z, c=volume)
 
     def __plot_nv_ground_truth(self, frameidx: int, ax):
-        nv_builder = NeuralVolumeBuilder(self.resolution, frameidx, NeuralVolumeBuilder.MODE_TRAIN_DATASET)
+        nv_builder = NeuralVolumeBuilder(self.resolution, frameidx, self.mode)
         positions, volume = nv_builder.get_nv_ground_truth()
 
         if self.EXCLUDE_TRANSPARENT_POINTS:
@@ -84,7 +100,7 @@ class NeuralVolumePlotter:
 
         is_implemented_animation = False
         if not is_implemented_animation:
-            builder = NeuralVolumeBuilder(self.resolution, 0, NeuralVolumeBuilder.MODE_TRAIN_DATASET)
+            builder = NeuralVolumeBuilder(self.resolution, 0, self.mode)
             builder.calculate_mse_loss_from_cached_data(list_templates, list_positions)
             fig = plt.figure()
             ax = fig.add_subplot(projection='3d')
