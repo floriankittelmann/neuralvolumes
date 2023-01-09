@@ -147,10 +147,6 @@ class Blender2Dataset(torch.utils.data.Dataset):
     def get_images_path(self):
         return "experiments/blender2/data"
 
-    def get_frame_index_dataset(self, frame_number: int) -> float:
-        nof_total_frames = float(len(self.framecamlist))
-        return frame_number / nof_total_frames * 2.0 - 1.0
-
     def __getitem__(self, idx: int) -> dict:
         frame, cam = self.framecamlist[idx]
         result = {}
@@ -183,7 +179,6 @@ class Blender2Dataset(torch.utils.data.Dataset):
             result["fixedcamimage"] = fixedcamimage
 
         result["validinput"] = np.float32(1.0 if validinput else 0.0)
-        result["frameindex"] = self.get_frame_index_dataset(frame)
 
         gt_path = self.ground_truth_path()
         if gt_path is not None:

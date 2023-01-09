@@ -60,9 +60,8 @@ class Autoencoder(nn.Module):
 
     def forward(self, iternum, losslist, camrot, campos, focal, princpt, pixelcoords, validinput,
                 fixedcamimage=None, encoding=None, keypoints=None, camindex=None,
-                image=None, imagevalid=None, viewtemplate=False, frameindex=None, outputlist=[],
-                gt_positions=None, gt_volume=None
-                ):
+                image=None, imagevalid=None, viewtemplate=False,
+                outputlist=[], gt_positions=None, gt_volume=None):
         result = {"losses": {}}
 
         # encode input or get encoding
@@ -72,10 +71,7 @@ class Autoencoder(nn.Module):
             result["losses"].update(encout["losses"])
 
         # decode
-        cur_device = torch.cuda.current_device()
-        if frameindex.dtype == torch.float64:
-            frameindex = frameindex.type(torch.FloatTensor).to(cur_device)
-        decout = self.decoder(encoding=encoding, viewpos=campos, frameindex=frameindex, losslist=losslist)
+        decout = self.decoder(encoding, campos, losslist)
         result["losses"].update(decout["losses"])
         result["decout"] = decout
 

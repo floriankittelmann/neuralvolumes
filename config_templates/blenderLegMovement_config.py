@@ -80,9 +80,7 @@ class DatasetConfig:
                 warptype="affinemix",
                 templatetype="affinemix",
                 viewconditioned=True,
-                templateres=template_size,
-                frameindexinfo=False
-            ),
+                templateres=template_size),
             volsampler=volsamplerlib.VolSampler(),
             colorcal=colorcalib.Colorcal(dataset.get_allcameras()),
             dt=raymarching_dt,
