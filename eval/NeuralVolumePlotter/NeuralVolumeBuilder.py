@@ -35,6 +35,11 @@ class NeuralVolumeBuilder:
         return pos.to(cur_device)
 
     def get_nv_from_model_output(self, decout: dict):
+        """
+            returns positions (x,y,z) and neuralvolumes (r,g,b,a)
+            pos: x,y,z coordinates in m
+            nv: r,g,b,a in the scale from 0-1
+        """
         pos: torch.Tensor = self.__get_uniform_positions_torch(decout)
         volsampler: VolSampler = VolSampler()
         sample_rgb, sample_alpha = volsampler(pos=pos, **decout)
@@ -49,12 +54,18 @@ class NeuralVolumeBuilder:
 
         sample_rgb = sample_rgb.reshape((batchsize, nof_data_points, 3))
         sample_alpha = sample_alpha.reshape((batchsize, nof_data_points))
-        sample_rgba[:, :, 0:3] = sample_rgb
+        sample_rgba[:, :, 0:3] = sample_rgb / 255.
         sample_rgba[:, :, 3] = sample_alpha
-        pos = pos.reshape((batchsize, nof_data_points, 3))
+        sample_rgba = sample_rgba.clip(min=0., max=1.)
+        pos: np.ndarray = pos.reshape((batchsize, nof_data_points, 3))
         return pos, sample_rgba
 
     def get_nv_ground_truth(self):
+        """
+            returns positions (x,y,z) and neuralvolumes (r,g,b,a)
+            pos: x,y,z coordinates in m
+            nv: r,g,b,a in the scale from 0-1
+        """
         if self.mode == self.MODE_TRAIN_DATASET:
             caption = "train"
         elif self.mode == self.MODE_TEST_DATASET:
@@ -92,9 +103,40 @@ class NeuralVolumeBuilder:
 
         return grid.points, np.concatenate((colors, alpha), axis=1)
 
-    def calculate_mse_loss(self, decout: dict):
+    def __calculate_mse_loss(
+            self,
+            pos_model: np.ndarray,
+            nv_model: np.ndarray,
+            pos_truth: np.ndarray,
+            nv_truth: np.ndarray
+    ):
+        nv_model = nv_model.reshape((self.resolution ** 3, 4))
+        pos_model = pos_model.reshape((self.resolution ** 3, 3))
+
+        pos_model, nv_model = self.__sort_nv(pos_model, nv_model)
+        pos_truth, nv_truth = self.__sort_nv(pos_truth, nv_truth)
+
+        #pos_nv_model = np.concatenate((pos_model, nv_model), axis=1)
+        #pos_nv_ground_truth = np.concatenate((pos_truth, nv_truth), axis=1)
+        loss = np.mean((nv_truth * 255. - nv_model * 255.)**2)
+        print(loss)
+        return loss
+
+    def __sort_nv(self, pos: np.ndarray, nv: np.ndarray):
+        ind = np.lexsort((pos[:, 0], pos[:, 1], pos[:, 2]))
+        return pos[ind], nv[ind]
+
+    def calculate_mse_loss_from_decout(self, decout: dict):
         pos_model, nv_model = self.get_nv_from_model_output(decout)
         pos_ground_truth, nv_ground_truth = self.get_nv_ground_truth()
+        return self.__calculate_mse_loss(pos_model, nv_model, pos_ground_truth, nv_ground_truth)
+
+    def calculate_mse_loss_from_cached_data(self, list_templates: list, list_pos: list):
+        pos_model: np.ndarray = list_pos[self.frameidx]
+        nv_model: np.ndarray = list_templates[self.frameidx]
+        pos_ground_truth, nv_ground_truth = self.get_nv_ground_truth()
+        return self.__calculate_mse_loss(pos_model, nv_model, pos_ground_truth, nv_ground_truth)
+
 
 
 

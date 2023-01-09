@@ -52,13 +52,14 @@ if __name__ == "__main__":
     itemnum = 0
     starttime = time.time()
 
-    outpath_np_folder = os.path.join(outpath, "templates")
+    outpath_np_folder = os.path.join(outpath, "decout")
     try:
         os.makedirs(outpath_np_folder)
     except OSError:
         pass
 
-    plotter = NeuralVolumePlotter(outpath_np_folder)
+    resolution: int = 64
+    plotter = NeuralVolumePlotter(outpath_np_folder, resolution)
     imgindex = 0
     with torch.no_grad():
         for data in dataloader_render:
@@ -67,7 +68,7 @@ if __name__ == "__main__":
             output = ae(iternum, [], **{k: x.to("cuda") for k, x in data.items()}, **profile.get_ae_args())
             decout_main = output['decout']
 
-            plotter.save_uniform_dist_volume(decout=decout_main, frameidx=imgindex)
+            plotter.save_volume_and_pos(decout=decout_main, frameidx=imgindex)
 
             endtime = time.time()
             ips = 1. / (endtime - starttime)

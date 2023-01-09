@@ -17,9 +17,9 @@ class NeuralVolumePlotter:
     # transparent voxels can not be seen anyway with the our eyes
     EXCLUDE_TRANSPARENT_POINTS = True
 
-    def __init__(self, output_path: str):
+    def __init__(self, output_path: str, resolution: int):
         self.output_path: str = output_path
-        self.resolution: int = 64
+        self.resolution: int = resolution
 
     def save_volume_and_pos(self, decout: dict, frameidx: int):
         nv_builder = NeuralVolumeBuilder(self.resolution, frameidx, NeuralVolumeBuilder.MODE_TRAIN_DATASET)
@@ -34,15 +34,12 @@ class NeuralVolumePlotter:
         with open(path_pos, 'wb') as f:
             np.save(f, pos)
 
-    def __plot_nv_output_model(self, idx, plot_axis, list_templates: list, list_pos: list):
-        volume = list_templates[idx]
-        positions = list_pos[idx]
+    def __plot_nv_output_model(self, frameidx: int, plot_axis, list_templates: list, list_pos: list):
+        volume = list_templates[frameidx]
+        positions = list_pos[frameidx]
         nof_data_points = positions.shape[1]
         volume = volume.reshape((nof_data_points, 4))
         positions = positions.reshape((nof_data_points, 3))
-
-        volume[:, 0:3] = volume[:, 0:3] / 255.
-        volume = volume.clip(min=0., max=1.)
 
         formatter = NeuralVolumeFormatter()
         if self.EXCLUDE_GRAY_POINTS_FROM_MODEL_NV:
@@ -87,6 +84,8 @@ class NeuralVolumePlotter:
 
         is_implemented_animation = False
         if not is_implemented_animation:
+            builder = NeuralVolumeBuilder(self.resolution, 0, NeuralVolumeBuilder.MODE_TRAIN_DATASET)
+            builder.calculate_mse_loss_from_cached_data(list_templates, list_positions)
             fig = plt.figure()
             ax = fig.add_subplot(projection='3d')
             ax.set_xlabel('x')
