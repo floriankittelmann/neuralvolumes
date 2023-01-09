@@ -6,8 +6,6 @@ from eval.NeuralVolumePlotter.NeuralVolumeFormatter import NeuralVolumeFormatter
 
 
 class NeuralVolumePlotter:
-    MODE_TRAIN_DATASET = 1
-    MODE_TEST_DATASET = 2
 
     # in case the model still outputs a lot of voxel in the color of the background
     __EXCLUDE_GRAY_POINTS_FROM_MODEL_NV = True
@@ -16,17 +14,16 @@ class NeuralVolumePlotter:
     # transparent voxels can not be seen anyway with the our eyes
     __EXCLUDE_TRANSPARENT_POINTS = True
 
-    def __init__(self, resolution: int, mode: int):
+    def __init__(self, resolution: int):
         self.resolution: int = resolution
-        self.mode = mode
 
     def __plot_nv_output_model(self, decout: dict, ax):
         nv_builder = NeuralVolumeBuilder(self.resolution)
         positions, volume = nv_builder.get_nv_from_model_output(decout)
-
+        positions, volume = self.__prepare_pos_nv_np_arrays_for_plot(positions, volume)
         formatter = NeuralVolumeFormatter()
-        if self.__EXCLUDE_TRANSPARENT_POINTS:
-            positions, volume = formatter.exclude_transparent_points(positions=positions, volume=volume)
+        if self.__EXCLUDE_GRAY_POINTS_FROM_MODEL_NV:
+            positions, volume = formatter.exclude_gray_from_volume(positions=positions, volume=volume)
 
         x = positions[:, 0]
         y = positions[:, 1]
@@ -60,7 +57,9 @@ class NeuralVolumePlotter:
         ax.set_ylabel('y')
         ax.set_zlabel('z')
         self.__plot_nv_output_model(decout, ax)
-        self.__plot_nv_ground_truth(input["gt_pos"], input["gt_nv"], ax)
+        positions = input["gt_positions"]
+        volume = input["gt_volume"]
+        self.__plot_nv_ground_truth(positions, volume, ax)
         limit = [-1.0, 1.0]
         ax.set_xlim(limit)
         ax.set_ylim(limit)

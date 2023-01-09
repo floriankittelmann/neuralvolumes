@@ -22,8 +22,8 @@ def exclude_by_alpha(row: np.ndarray) -> np.ndarray:
 class NeuralVolumeFormatter:
 
     def __get_filtered_pos_volume(self, positions: np.ndarray, volume: np.ndarray, filter_func: Callable):
-        mask = np.full((volume.shape[0], 1), True)
-        temp_data = np.concatenate((volume, mask), axis=1)
+        column_to_add = np.full((volume.shape[0], 1), True)
+        temp_data = np.concatenate((volume, column_to_add), axis=1)
         temp_data = np.apply_along_axis(filter_func, 1, temp_data)
         mask = temp_data[:, 4].astype(bool)
         return positions[mask, :], volume[mask, :]

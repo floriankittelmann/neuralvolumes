@@ -21,13 +21,11 @@ if __name__ == "__main__":
     ds_config: DatasetConfig = experconfig.DatasetConfig()
     if args.traindataset:
         profile = ds_config.get_train_profile()
-        mode = NeuralVolumePlotter.MODE_TRAIN_DATASET
     else:
         profile = ds_config.get_render_profile()
-        mode = NeuralVolumePlotter.MODE_TEST_DATASET
 
     resolution: int = 64
-    plotter = NeuralVolumePlotter(resolution, mode)
+    plotter = NeuralVolumePlotter(resolution)
 
     env_utils = EnvUtils()
     batch_size = 1
@@ -63,10 +61,10 @@ if __name__ == "__main__":
             # forward
             output = ae(iternum, [], **{k: x.to("cuda") for k, x in data.items()})
 
-            plotter.plot_one_frame(decout=output['decout'], input=data.items())
+            plotter.plot_one_frame(decout=output['decout'], input=data)
             exit()
 
-            endtime = time.time()
+            """endtime = time.time()
             ips = 1. / (endtime - starttime)
             print("{:4} / {:4} ({:.4f} iter/sec)".format(itemnum, len(dataset), ips), end="\n")
             starttime = time.time()
@@ -78,4 +76,4 @@ if __name__ == "__main__":
                 plotter.plot_frames()
                 exit()
             else:
-                print("saved neural volumes from frame with index {}".format(imgindex))
+                print("saved neural volumes from frame with index {}".format(imgindex))"""
