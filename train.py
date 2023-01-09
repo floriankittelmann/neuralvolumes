@@ -12,6 +12,8 @@ import gc
 import wandb
 import numpy as np
 import os
+
+from eval.NeuralVolumePlotter.NeuralVolumeBuilder import NeuralVolumeBuilder
 from utils.EnvUtils import EnvUtils
 from utils.TrainUtils import TrainUtils
 import torch.backends.cudnn
@@ -65,6 +67,15 @@ if __name__ == "__main__":
         for data in train_dataloader:
             # forward
             output = ae(iternum, lossweights.keys(), **{k: x.to("cuda") for k, x in data.items()})
+
+            # ground truth loss
+            """nv_builder = NeuralVolumeBuilder(
+                resolution=trainprofile.gt_resolution,
+                frameidx=1,
+                train_test_mode=NeuralVolumeBuilder.MODE_TRAIN_DATASET)
+            nv_builder.calculate_mse_loss_from_decout(output['decout'])
+            output["losses"]["gtloss"] = 1.0"""
+
             train_loss = train_utils.calculate_final_loss_from_output(output, lossweights)
 
             starttime = train_utils.print_iteration_infos(

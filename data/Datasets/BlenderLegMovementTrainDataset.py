@@ -11,3 +11,6 @@ class BlenderLegMovementTrainDataset(Blender2Dataset):
     def get_frame_index_dataset(self, frame_number: int) -> float:
         total_frames = 100
         return float(frame_number % total_frames) / float(total_frames) * 2.0 - 1.0
+
+    def ground_truth_path(self):
+        return "experiments/blenderLegMovement/data/groundtruth_train"

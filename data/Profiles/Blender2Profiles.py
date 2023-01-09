@@ -17,13 +17,15 @@ class TrainBlender2:
             get_dataset_func: Callable,
             batchsize: int,
             maxiter: int,
-            lr: float
+            lr: float,
+            gt_resolution: int
     ):
         self.get_autoencoder_func = get_autoencoder_func
         self.get_dataset_func = get_dataset_func
         self.batchsize = batchsize
         self.maxiter = maxiter
         self.lr = lr
+        self.gt_resolution = gt_resolution
 
     def get_batchsize(self) -> int: return self.batchsize
 
@@ -78,10 +80,12 @@ class Progress:
     def __init__(
             self,
             get_dataset_func: Callable,
-            batchsize: int
+            batchsize: int,
+            gt_resolution: int
     ):
         self.batchsize = batchsize
         self.get_dataset_func = get_dataset_func
+        self.gt_resolution = gt_resolution
 
     def get_batchsize(self): return self.batchsize
 
@@ -107,7 +111,8 @@ class Render:
             maxframes: int = -1,
             showtarget: bool = False,
             viewtemplate: bool = False,
-            resolution_mode: int = Blender2Dataset.MODE_1024x668_LOSSIMG_INPUT_RES
+            resolution_mode: int = Blender2Dataset.MODE_1024x668_LOSSIMG_INPUT_RES,
+            gt_resolution: int = 64
     ):
         self.get_autoencoder_func = get_autoencoder_func
         self.get_dataset_func = get_dataset_func
@@ -117,6 +122,7 @@ class Render:
         self.viewtemplate = viewtemplate
         self.batchsize = batchsize
         self.resolution_mode = resolution_mode
+        self.gt_resolution = gt_resolution
 
     def get_autoencoder(self, dataset):
         return self.get_autoencoder_func(dataset)

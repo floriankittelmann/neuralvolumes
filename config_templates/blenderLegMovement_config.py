@@ -24,6 +24,7 @@ class DatasetConfig:
     def __init__(self):
         self.loss_mode_res = Blender2Dataset.MODE_512x334_LOSSIMG_INPUT_RES
         self.encoder_mode_res = Blender2Dataset.MODE_512x334_ENCODER_INPUT_RES
+        self.gt_resolution = 64
 
     def get_train_dataset_config_func(
             self,
@@ -42,7 +43,8 @@ class DatasetConfig:
             subsampletype=subsampletype,
             subsamplesize=16,
             scale_focal=1.0,
-            scale_factor=1.0
+            scale_factor=1.0,
+            ground_truth_resolution=self.gt_resolution
         )
 
     def get_test_dataset_config_func(
@@ -62,7 +64,8 @@ class DatasetConfig:
             subsampletype=subsampletype,
             subsamplesize=16,
             scale_focal=1.0,
-            scale_factor=1.0
+            scale_factor=1.0,
+            ground_truth_resolution=self.gt_resolution
         )
 
     def get_autoencoder_config_func(self, dataset) -> Autoencoder:
@@ -90,13 +93,15 @@ class DatasetConfig:
             get_dataset_func=self.get_train_dataset_config_func,
             batchsize=32,
             maxiter=500000,
-            lr=0.0001
+            lr=0.0001,
+            gt_resolution=self.gt_resolution
         )
 
     def get_progress(self) -> Progress:
         return Progress(
             get_dataset_func=self.get_test_dataset_config_func,
-            batchsize=32
+            batchsize=32,
+            gt_resolution=self.gt_resolution
         )
 
     def get_progresswriter(self) -> ProgressWriter:
@@ -107,5 +112,6 @@ class DatasetConfig:
             get_autoencoder_func=self.get_autoencoder_config_func,
             get_dataset_func=self.get_test_dataset_config_func,
             batchsize=16,
-            resolution_mode=self.loss_mode_res
+            resolution_mode=self.loss_mode_res,
+            gt_resolution=self.gt_resolution
         )

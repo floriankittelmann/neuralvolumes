@@ -1,18 +1,12 @@
-import pyvista as pv
 import numpy as np
 import torch
-
 from models.volsamplers.warpvoxel import VolSampler
+import pyvista as pv
 
 
 class NeuralVolumeBuilder:
 
-    MODE_TRAIN_DATASET = 1
-    MODE_TEST_DATASET = 2
-
-    def __init__(self, resolution: int, frameidx: int, train_test_mode: int):
-        self.frameidx: int = frameidx
-        self.mode: int = train_test_mode
+    def __init__(self, resolution: int):
         self.resolution: int = resolution
 
     def __get_meshgrid_uniform_positions(self):
@@ -37,8 +31,8 @@ class NeuralVolumeBuilder:
     def get_nv_from_model_output(self, decout: dict):
         """
             returns positions (x,y,z) and neuralvolumes (r,g,b,a)
-            pos: batchsize,x,y,z coordinates in m
-            nv: r,g,b,a in the scale from 0-1
+            pos: coordinates x,y,z -> shape: (batchsize, nofPoints, 3)
+            nv: neuralvolumes rgba-format with scale 0-1 -> shape: (batchsize, nofPoints, 4)
         """
         pos: torch.Tensor = self.__get_uniform_positions_torch(decout)
         volsampler: VolSampler = VolSampler()
@@ -60,23 +54,13 @@ class NeuralVolumeBuilder:
         pos: np.ndarray = pos.reshape((batchsize, nof_data_points, 3))
         return pos, sample_rgba
 
-    def get_nv_ground_truth(self):
+    def get_nv_ground_truth(self, gt_path: str):
         """
-            returns positions (x,y,z) and neuralvolumes (r,g,b,a)
-            pos: x,y,z coordinates in m
-            nv: r,g,b,a in the scale from 0-1
+            returns two np-array's:
+            pos: x,y,z coordinates                  -> shape: (nofPoints, 3)
+            nv: neuralvolumes rgba with scale 0-1   -> shape: (nofPoints, 4)
         """
-        if self.mode == self.MODE_TRAIN_DATASET:
-            caption = "train"
-        elif self.mode == self.MODE_TEST_DATASET:
-            caption = "test"
-        else:
-            raise Exception("wrong mode provided")
-        path = "experiments/blenderLegMovement/data/groundtruth_{}/frame{:04d}.stl".format(
-            caption,
-            self.frameidx)
-        mesh = pv.read(path)
-
+        mesh = pv.read(gt_path)
         x, y, z = self.__get_meshgrid_uniform_positions()
 
         # Create unstructured grid from the structured grid
@@ -86,8 +70,9 @@ class NeuralVolumeBuilder:
         # get part of the mesh within the mesh's bounding surface.
         selection = ugrid.select_enclosed_points(mesh.extract_surface(), tolerance=0.0, check_surface=False)
 
+        nof_points = self.resolution ** 3
         grid = pv.StructuredGrid(x, y, z)
-        mask = selection.point_data['SelectedPoints'].view(bool).reshape((self.resolution ** 3))
+        mask = selection.point_data['SelectedPoints'].view(bool).reshape(nof_points)
 
         alpha = np.zeros((mask.shape[0], 1))
         alpha[mask, 0] = 1.
@@ -96,48 +81,12 @@ class NeuralVolumeBuilder:
         g_value = np.mean(np.array([106., 73., 150.])) / 255.
         b_value = np.mean(np.array([70., 49., 114.])) / 255.
 
-        colors = np.ones((mask.shape[0], 3))
+        colors = np.zeros((mask.shape[0], 3))
         colors[mask, 0] = r_value
         colors[mask, 1] = g_value
         colors[mask, 2] = b_value
 
-        return grid.points, np.concatenate((colors, alpha), axis=1)
-
-    def __calculate_mse_loss(
-            self,
-            pos_model: np.ndarray,
-            nv_model: np.ndarray,
-            pos_truth: np.ndarray,
-            nv_truth: np.ndarray
-    ):
-        batchsize = nv_model.shape[0]
-        nv_model = nv_model.reshape((batchsize * self.resolution ** 3, 4))
-        pos_model = pos_model.reshape((batchsize * self.resolution ** 3, 3))
-
-        pos_model, nv_model = self.__sort_nv(pos_model, nv_model)
-        pos_truth, nv_truth = self.__sort_nv(pos_truth, nv_truth)
-
-        #pos_nv_model = np.concatenate((pos_model, nv_model), axis=1)
-        #pos_nv_ground_truth = np.concatenate((pos_truth, nv_truth), axis=1)
-        loss = np.mean((nv_truth * 255. - nv_model * 255.)**2)
-        print(loss)
-        return loss
-
-    def __sort_nv(self, pos: np.ndarray, nv: np.ndarray):
-        ind = np.lexsort((pos[:, 0], pos[:, 1], pos[:, 2]))
-        return pos[ind], nv[ind]
-
-    def calculate_mse_loss_from_decout(self, decout: dict, frameidx: torch.Tensor):
-        pos_model, nv_model = self.get_nv_from_model_output(decout)
-        pos_ground_truth, nv_ground_truth = self.get_nv_ground_truth()
-        return self.__calculate_mse_loss(pos_model, nv_model, pos_ground_truth, nv_ground_truth)
-
-    def calculate_mse_loss_from_cached_data(self, list_templates: list, list_pos: list):
-        pos_model: np.ndarray = list_pos[self.frameidx]
-        nv_model: np.ndarray = list_templates[self.frameidx]
-        pos_ground_truth, nv_ground_truth = self.get_nv_ground_truth()
-        return self.__calculate_mse_loss(pos_model, nv_model, pos_ground_truth, nv_ground_truth)
-
-
-
-
+        positions = np.zeros(grid.points.shape)
+        positions[0:nof_points] = grid.points[0:nof_points, :]
+        volume = np.concatenate((colors, alpha), axis=1).astype(np.float32)
+        return positions, volume

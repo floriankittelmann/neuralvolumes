@@ -4,12 +4,15 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 #
+import os.path
 import numpy as np
 from PIL import Image
 import torch.utils.data
 from data.CameraSetups.CameraSetupInBlender2 import CameraSetupInBlender2
 from typing import List
 from typing import Callable
+
+from eval.NeuralVolumePlotter.NeuralVolumeBuilder import NeuralVolumeBuilder
 
 
 class Blender2Dataset(torch.utils.data.Dataset):
@@ -35,7 +38,8 @@ class Blender2Dataset(torch.utils.data.Dataset):
             imagemean: float = 100.,
             imagestd: float = 25.,
             scale_factor: float = 1.0,
-            scale_focal: float = 1.0
+            scale_focal: float = 1.0,
+            ground_truth_resolution: int = 64
     ):
         # get options
         self.allcameras = []
@@ -45,6 +49,7 @@ class Blender2Dataset(torch.utils.data.Dataset):
         self.princpt = {}
         self.encoder_input_imgsize = encoder_input_imgsize
         self.loss_imgsize_mode = loss_imgsize_mode
+        self.ground_truth_resolution = ground_truth_resolution
 
         self.width = 1024
         self.height = 667
@@ -104,6 +109,9 @@ class Blender2Dataset(torch.utils.data.Dataset):
             resize_param_loss_imgs = 8
         image = np.asarray(Image.open(imagepath), dtype=np.uint8)
         return image[::resize_param_loss_imgs, ::resize_param_loss_imgs, :].transpose((2, 0, 1)).astype(np.float32)
+
+    def ground_truth_path(self):
+        return None
 
     def get_bg_img_path(self):
         return "experiments/blender2/data/bg.jpg"
@@ -172,12 +180,19 @@ class Blender2Dataset(torch.utils.data.Dataset):
                     validinput = False
                 fixedcamimage[i * 3:(i + 1) * 3, :, :] = image
 
-            #fixedcamimage[:] -= self.imagemean
-            #fixedcamimage[:] /= self.imagestd
             result["fixedcamimage"] = fixedcamimage
 
         result["validinput"] = np.float32(1.0 if validinput else 0.0)
         result["frameindex"] = self.get_frame_index_dataset(frame)
+
+        gt_path = self.ground_truth_path()
+        if gt_path is not None:
+            gt_path = str(gt_path)
+            gt_path = os.path.join(gt_path, "frame{:04d}.stl".format(frame))
+            nv_builder = NeuralVolumeBuilder(self.ground_truth_resolution)
+            gt_pos, gt_volume = nv_builder.get_nv_ground_truth(gt_path)
+            result["gt_positions"] = gt_pos.astype(np.float32)
+            result['gt_volume'] = gt_volume.astype(np.float32)
 
         # image data
         if cam is not None:

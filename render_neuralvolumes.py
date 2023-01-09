@@ -19,16 +19,15 @@ if __name__ == "__main__":
     experconfig = import_config_util.import_module(args.experconfig)
 
     ds_config: DatasetConfig = experconfig.DatasetConfig()
-
     if args.traindataset:
         profile = ds_config.get_train_profile()
-        mode = NeuralVolumeBuilder.MODE_TRAIN_DATASET
+        mode = NeuralVolumePlotter.MODE_TRAIN_DATASET
     else:
         profile = ds_config.get_render_profile()
-        mode = NeuralVolumeBuilder.MODE_TEST_DATASET
+        mode = NeuralVolumePlotter.MODE_TEST_DATASET
 
     resolution: int = 64
-    plotter = NeuralVolumePlotter(outpath, resolution, mode)
+    plotter = NeuralVolumePlotter(resolution, mode)
 
     env_utils = EnvUtils()
     batch_size = 1
@@ -63,9 +62,9 @@ if __name__ == "__main__":
             b = next(iter(data.values())).size(0)
             # forward
             output = ae(iternum, [], **{k: x.to("cuda") for k, x in data.items()})
-            decout_main = output['decout']
 
-            plotter.save_volume_and_pos(decout=decout_main, frameidx=imgindex)
+            plotter.plot_one_frame(decout=output['decout'], input=data.items())
+            exit()
 
             endtime = time.time()
             ips = 1. / (endtime - starttime)

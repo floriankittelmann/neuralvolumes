@@ -97,11 +97,6 @@ class Autoencoder(nn.Module):
         if "ialpharec" in outputlist:
             result["ialpharec"] = rayalpha
 
-        # ground truth loss
-        """resolution = 64
-        nv_builder = NeuralVolumeBuilder(resolution=resolution)
-        result["losses"]["gtloss"] = 1.0"""
-
         # opacity prior
         if "alphapr" in losslist:
             alphaprior = torch.mean(
