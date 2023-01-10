@@ -8,7 +8,7 @@ from eval.NeuralVolumePlotter.NeuralVolumeFormatter import NeuralVolumeFormatter
 class NeuralVolumePlotter:
 
     # in case the model still outputs a lot of voxel in the color of the background
-    __EXCLUDE_GRAY_POINTS_FROM_MODEL_NV = True
+    __EXCLUDE_GRAY_POINTS_FROM_MODEL_NV = False
 
     # this speeds up creating of the plot, because less points are in the plot
     # transparent voxels can not be seen anyway with the our eyes

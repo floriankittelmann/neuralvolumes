@@ -4,7 +4,6 @@ import torch.utils.data
 from torch.utils.data import DataLoader
 
 from config_templates.blender2_config import DatasetConfig
-from eval.NeuralVolumePlotter.NeuralVolumeBuilder import NeuralVolumeBuilder
 from eval.NeuralVolumePlotter.NeuralVolumePlotter import NeuralVolumePlotter
 from utils.EnvUtils import EnvUtils
 from utils.ImportConfigUtil import ImportConfigUtil
@@ -24,7 +23,7 @@ if __name__ == "__main__":
     else:
         profile = ds_config.get_render_profile()
 
-    resolution: int = 64
+    resolution: int = 16
     plotter = NeuralVolumePlotter(resolution)
 
     env_utils = EnvUtils()
