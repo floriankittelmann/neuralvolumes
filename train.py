@@ -63,11 +63,22 @@ if __name__ == "__main__":
     )
     print("wandb sync " + os.path.dirname(run.dir))
 
+    train_with_ground_truth_loss = trainprofile.get_should_train_with_ground_truth()
     for epoch in range(epochs_to_learn):
         for data in train_dataloader:
             # forward
             output = ae(iternum, lossweights.keys(), **{k: x.to("cuda") for k, x in data.items()})
-            train_loss = train_utils.calculate_final_loss_from_output(output, lossweights)
+
+            ground_truth_loss_train = None
+            if 'ground_truth_loss' in output.keys():
+                ground_truth_loss_train = output['ground_truth_loss']
+            train_loss = train_utils.calculate_final_loss_from_output(
+                output=output,
+                lossweights=lossweights,
+                ground_turth_loss=ground_truth_loss_train,
+                iternum=iternum,
+                train_with_ground_truth=train_with_ground_truth_loss
+            )
 
             starttime = train_utils.print_iteration_infos(
                 iternum=iternum,
@@ -102,10 +113,17 @@ if __name__ == "__main__":
                     ae=ae,
                     lossweights=lossweights
                 )
-                test_loss = train_utils.calculate_final_loss_from_output(testoutput, lossweights)
 
+                ground_truth_loss_test = None
                 if 'ground_truth_loss' in testoutput.keys():
                     ground_truth_loss_test = testoutput['ground_truth_loss']
+                test_loss = train_utils.calculate_final_loss_from_output(
+                    output=testoutput,
+                    lossweights=lossweights,
+                    ground_turth_loss=ground_truth_loss_test,
+                    iternum=iternum,
+                    train_with_ground_truth=train_with_ground_truth_loss
+                )
                 np_img = train_utils.save_model_and_validation_pictures(
                     iternum=iternum,
                     outpath=outpath,
@@ -116,9 +134,6 @@ if __name__ == "__main__":
                     data=data,
                     writer=writer)
 
-            ground_truth_loss_train = None
-            if 'ground_truth_loss' in output.keys():
-                ground_truth_loss_train = output['ground_truth_loss']
             train_utils.save_wandb_info(
                 iternum=iternum,
                 train_loss=train_loss,

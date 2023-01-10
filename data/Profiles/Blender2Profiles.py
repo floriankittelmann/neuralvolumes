@@ -17,13 +17,18 @@ class TrainBlender2:
             get_dataset_func: Callable,
             batchsize: int,
             maxiter: int,
-            lr: float
+            lr: float,
+            should_train_with_ground_truth: bool
     ):
         self.get_autoencoder_func = get_autoencoder_func
         self.get_dataset_func = get_dataset_func
         self.batchsize = batchsize
         self.maxiter = maxiter
         self.lr = lr
+        self.should_train_with_ground_truth = should_train_with_ground_truth
+
+    def get_should_train_with_ground_truth(self):
+        return self.should_train_with_ground_truth
 
     def get_batchsize(self) -> int: return self.batchsize
 

@@ -93,7 +93,8 @@ class DatasetConfig:
             get_dataset_func=self.get_train_dataset_config_func,
             batchsize=32,
             maxiter=500000,
-            lr=0.0001
+            lr=0.0001,
+            should_train_with_ground_truth=False
         )
 
     def get_progress(self) -> Progress:
