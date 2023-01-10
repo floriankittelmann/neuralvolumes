@@ -25,7 +25,7 @@ class DatasetConfig:
         self.loss_mode_res = Blender2Dataset.MODE_128x84
         self.encoder_mode_res = Blender2Dataset.MODE_128x84
         self.ground_truth_resolution = 16
-        self.fixed_cameras = ['028', '001', '019']
+        self.fixed_cameras = ['025', '028', '031']
 
     def get_train_dataset_config_func(
             self,
