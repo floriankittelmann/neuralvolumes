@@ -33,6 +33,6 @@ class GroundTruthLoss:
         pos_nv_truth = np.array(list(map(sort_nv, pos_nv_truth)))
 
         volume_model_sorted = pos_nv_model[:, :, 3:7]
-        pos_truth_sorted = pos_nv_truth[:, :, 3:7]
-        loss = np.mean((pos_truth_sorted - volume_model_sorted)**2)
+        volume_truth_sorted = pos_nv_truth[:, :, 3:7]
+        loss = np.mean((volume_truth_sorted - volume_model_sorted)**2)
         return loss
