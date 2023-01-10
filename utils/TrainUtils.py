@@ -258,7 +258,10 @@ class TrainUtils:
             data,
             writer
     ) -> (np.array, torch.Tensor):
-        if iternum % 100000 == 0 or iternum in [10000, 20000, 50000]:
+        if (iternum < 100 and iternum % 20 == 0) or \
+                (100 <= iternum <= 1000 and iternum % 100 == 0) or \
+                iternum % 100000 == 0 or \
+                iternum in [2000, 5000, 10000, 20000, 50000]:
             torch.save(ae.module.state_dict(), "{}/iteration{}_aeparams.pt".format(outpath, iternum))
         else:
             torch.save(ae.module.state_dict(), "{}/aeparams.pt".format(outpath))
