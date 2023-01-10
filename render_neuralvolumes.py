@@ -23,7 +23,7 @@ if __name__ == "__main__":
     else:
         profile = ds_config.get_render_profile()
 
-    resolution: int = 16
+    resolution: int = 64
     plotter = NeuralVolumePlotter(resolution)
 
     env_utils = EnvUtils()
