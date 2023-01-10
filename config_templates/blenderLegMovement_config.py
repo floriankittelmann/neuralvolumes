@@ -22,7 +22,7 @@ from models.neurvol1 import Autoencoder
 class DatasetConfig:
 
     def __init__(self):
-        self.loss_mode_res = Blender2Dataset.MODE_128x84
+        self.loss_mode_res = Blender2Dataset.MODE_512x334_LOSSIMG_INPUT_RES
         self.encoder_mode_res = Blender2Dataset.MODE_128x84
         self.ground_truth_resolution = 16
 
