@@ -105,7 +105,7 @@ if __name__ == "__main__":
             test_batch = None
             ground_truth_loss_test = None
             # save intermediate results
-            if iternum % 1000 == 0 or iternum in [0, 1, 2, 3, 4, 5]:
+            if (iternum < 1000 and iternum % 20) or iternum % 1000 == 0 or iternum in [0, 1, 2, 3, 4, 5]:
                 test_batch, testoutput = train_utils.get_testbatch_testoutput(
                     iternum=iternum,
                     progressprof=progressprof,
