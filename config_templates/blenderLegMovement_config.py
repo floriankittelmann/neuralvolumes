@@ -24,7 +24,7 @@ class DatasetConfig:
     def __init__(self):
         self.loss_mode_res = Blender2Dataset.MODE_512x334_LOSSIMG_INPUT_RES
         self.encoder_mode_res = Blender2Dataset.MODE_512x334_ENCODER_INPUT_RES
-        self.ground_truth_resolution = 16
+        self.ground_truth_resolution = 64
 
     def get_train_dataset_config_func(
             self,
