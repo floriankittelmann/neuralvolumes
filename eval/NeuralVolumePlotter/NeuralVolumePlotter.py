@@ -8,7 +8,7 @@ from eval.NeuralVolumePlotter.NeuralVolumeFormatter import NeuralVolumeFormatter
 class NeuralVolumePlotter:
 
     # in case the model still outputs a lot of voxel in the color of the background
-    __EXCLUDE_GRAY_POINTS_FROM_MODEL_NV = True
+    __EXCLUDE_GRAY_POINTS_FROM_MODEL_NV = False
 
     # this speeds up creating of the plot, because less points are in the plot
     # transparent voxels can not be seen anyway with the our eyes
@@ -44,7 +44,9 @@ class NeuralVolumePlotter:
         return positions, volume
 
     def __plot_nv_ground_truth(self, positions: np.ndarray, volume: np.ndarray, ax):
-        positions, volume = self.__prepare_pos_nv_np_arrays_for_plot(positions, volume)
+        nv_builder = NeuralVolumeBuilder(self.resolution)
+        positions, volume = nv_builder.get_nv_ground_truth("experiments/blenderLegMovement/data/groundtruth_train/frame0000.stl")
+        #positions, volume = self.__prepare_pos_nv_np_arrays_for_plot(positions, volume)
         x = positions[:, 0]
         y = positions[:, 1]
         z = positions[:, 2]
@@ -59,7 +61,7 @@ class NeuralVolumePlotter:
         self.__plot_nv_output_model(decout, ax)
         positions = input["gt_positions"]
         volume = input["gt_volume"]
-        self.__plot_nv_ground_truth(positions, volume, ax)
+        #self.__plot_nv_ground_truth(positions, volume, ax)
         limit = [-1.0, 1.0]
         ax.set_xlim(limit)
         ax.set_ylim(limit)

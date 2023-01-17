@@ -24,7 +24,9 @@ class DatasetConfig:
     def __init__(self):
         self.loss_mode_res = Blender2Dataset.MODE_128x84
         self.encoder_mode_res = Blender2Dataset.MODE_128x84
-        self.ground_truth_resolution = 16
+        self.ground_truth_resolution = 48
+        self.subsamplesize = 48
+        self.templatesize = 48
 
     def get_train_dataset_config_func(
             self,
@@ -32,6 +34,8 @@ class DatasetConfig:
             maxframes: int = -1,
             subsampletype=None
     ) -> BlenderLegMovementTrainDataset:
+        
+        
         return BlenderLegMovementTrainDataset(
             camerafilter=camerafilter,
             framelist=[i for i in range(0, 3200, 1)][:maxframes],
@@ -41,7 +45,7 @@ class DatasetConfig:
             imagemean=100.,
             imagestd=25.,
             subsampletype=subsampletype,
-            subsamplesize=16,
+            subsamplesize=self.subsamplesize,
             scale_focal=1.0,
             scale_factor=1.0,
             ground_truth_resolution=self.ground_truth_resolution
@@ -62,14 +66,14 @@ class DatasetConfig:
             imagemean=100.,
             imagestd=25.,
             subsampletype=subsampletype,
-            subsamplesize=16,
+            subsamplesize=self.subsamplesize,
             scale_focal=1.0,
             scale_factor=1.0,
             ground_truth_resolution=self.ground_truth_resolution
         )
 
     def get_autoencoder_config_func(self, dataset) -> Autoencoder:
-        template_size = 16
+        template_size = self.templatesize
         raymarching_dt = 2. / float(template_size - 4)
         print("template resolution: ({}, {}, {})".format(template_size, template_size, template_size))
         return Autoencoder(
