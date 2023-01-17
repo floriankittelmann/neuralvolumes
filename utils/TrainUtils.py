@@ -222,20 +222,17 @@ class TrainUtils:
         loss = sum([
             lossweights[k] * (torch.sum(v[0]) / torch.sum(v[1]) if isinstance(v, tuple) else torch.mean(v))
             for k, v in output["losses"].items()])
-        if train_with_ground_truth and ground_turth_loss is not None:
-            """
+        """if train_with_ground_truth and ground_turth_loss is not None:
             if iternum < 1000:
                 f_ground_truth = - 1. / 1000. * iternum + 1.
                 f_loss_factor = 1. - f_ground_truth
             else:
                 f_ground_truth = 0
                 f_loss_factor = 1
-            
             loss = 10 * f_ground_truth * ground_turth_loss + f_loss_factor * loss
-            """
             if iternum == 1:
                 print("Just ground truth loss is taken")
-            loss = torch.tensor([ground_turth_loss], requires_grad=True)
+            loss = torch.tensor([ground_turth_loss], requires_grad=True)"""
         return loss
 
     def get_testbatch_testoutput(self, iternum, progressprof, test_dataloader, ae, lossweights):
