@@ -24,9 +24,9 @@ class DatasetConfig:
     def __init__(self):
         self.loss_mode_res = Blender2Dataset.MODE_128x84
         self.encoder_mode_res = Blender2Dataset.MODE_128x84
-        self.ground_truth_resolution = 48
-        self.subsamplesize = 48
-        self.templatesize = 48
+        self.ground_truth_resolution = 16
+        self.subsamplesize = 16
+        self.templatesize = 16
 
     def get_train_dataset_config_func(
             self,
@@ -34,8 +34,6 @@ class DatasetConfig:
             maxframes: int = -1,
             subsampletype=None
     ) -> BlenderLegMovementTrainDataset:
-        
-        
         return BlenderLegMovementTrainDataset(
             camerafilter=camerafilter,
             framelist=[i for i in range(0, 3200, 1)][:maxframes],
