@@ -176,9 +176,9 @@ class TrainUtils:
         }
         dict_wandb = self.__append_wandb_dict_from_model_output(train_output, "train", dict_wandb)
         if ground_truth_loss_train is not None:
-            dict_wandb['ground_truth_loss_train'] = ground_truth_loss_train
+            dict_wandb['ground_truth_loss_train'] = float(ground_truth_loss_train.item())
         if ground_truth_loss_test is not None:
-            dict_wandb['ground_truth_loss_test'] = ground_truth_loss_test
+            dict_wandb['ground_truth_loss_test'] = float(ground_truth_loss_test.item())
         if test_loss is not None:
             dict_wandb["test_loss"] = float(test_loss.item())
         if test_output is not None:

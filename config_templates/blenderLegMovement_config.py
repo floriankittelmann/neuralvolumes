@@ -24,8 +24,8 @@ class DatasetConfig:
     def __init__(self):
         self.loss_mode_res = Blender2Dataset.MODE_128x84
         self.encoder_mode_res = Blender2Dataset.MODE_128x84
-        self.loss_cameras = ['028', '034' '004', '010', '016', '022']
-        self.encoder_input_cameras = ['028', '004', '016']
+        # use all: self.loss_cameras = ['028', '034' '004', '010', '016', '022']
+        # use default: self.encoder_input_cameras = ['028', '004', '016']
         self.ground_truth_resolution = 16
         self.subsamplesize = 16
         self.templatesize = 16
@@ -36,14 +36,13 @@ class DatasetConfig:
             maxframes: int = -1,
             subsampletype=None
     ) -> BlenderLegMovementTrainDataset:
-        camerafilter = lambda x: True if x in self.loss_cameras else False
         return BlenderLegMovementTrainDataset(
             camerafilter=camerafilter,
             framelist=[i for i in range(0, 3200, 1)][:maxframes],
             encoder_input_imgsize=self.encoder_mode_res,
             loss_imgsize_mode=self.loss_mode_res,
             keyfilter=["bg", "fixedcamimage", "camera", "image", "pixelcoords"],
-            fixedcameras=self.encoder_input_cameras,
+
             imagemean=100.,
             imagestd=25.,
             subsampletype=subsampletype,
@@ -59,14 +58,12 @@ class DatasetConfig:
             maxframes: int = -1,
             subsampletype=None
     ) -> BlenderLegMovementTestDataset:
-        camerafilter = lambda x: True if x in self.loss_cameras else False
         return BlenderLegMovementTestDataset(
             camerafilter=camerafilter,
             framelist=[i for i in range(0, 800, 1)][:maxframes],
             encoder_input_imgsize=self.encoder_mode_res,
             loss_imgsize_mode=self.loss_mode_res,
             keyfilter=["bg", "fixedcamimage", "camera", "image", "pixelcoords"],
-            fixedcameras=self.encoder_input_cameras,
             imagemean=100.,
             imagestd=25.,
             subsampletype=subsampletype,

@@ -27,30 +27,19 @@ class NeuralVolumeBuilder:
         return torch.from_numpy(pos).to(cur_device)
 
     def get_nv_from_model_output(self, decout: dict):
-        """
-            returns positions (x,y,z) and neuralvolumes (r,g,b,a)
-            pos: coordinates x,y,z -> shape: (batchsize, nofPoints, 3)
-            nv: neuralvolumes rgba-format with scale 0-1 -> shape: (batchsize, nofPoints, 4)
-        """
         pos: torch.Tensor = self.__get_uniform_positions_torch(decout)
         volsampler: VolSampler = VolSampler()
         sample_rgb, sample_alpha = volsampler(pos=pos, **decout)
-        sample_rgb: np.ndarray = sample_rgb.cpu().detach().numpy()
-        sample_alpha: np.ndarray = sample_alpha.cpu().detach().numpy()
-        pos: np.ndarray = pos.cpu().numpy()
-        shape: tuple = sample_rgb.shape
+
+        shape = sample_rgb.size()
         nof_data_points = shape[3]
-
         batchsize = shape[0]
-        sample_rgba: np.ndarray = np.zeros((batchsize, nof_data_points, 4))
 
-        sample_rgb = sample_rgb.reshape((batchsize, nof_data_points, 3))
-        sample_alpha = sample_alpha.reshape((batchsize, nof_data_points))
-        sample_rgba[:, :, 0:3] = sample_rgb / 255.
-        sample_rgba[:, :, 3] = sample_alpha
-        sample_rgba = sample_rgba.clip(min=0., max=1.)
-        pos: np.ndarray = pos.reshape((batchsize, nof_data_points, 3))
-        return pos, sample_rgba
+        sample_rgb: torch.Tensor = torch.reshape(sample_rgb, (batchsize, nof_data_points, 3))
+        sample_alpha: torch.Tensor = torch.reshape(sample_alpha, (batchsize, nof_data_points, 1))
+        pos: torch.Tensor = torch.reshape(pos, (batchsize, nof_data_points, 3))
+        volume = torch.cat([sample_rgb, sample_alpha], dim=2)
+        return pos, volume
 
     def get_nv_ground_truth(self, gt_path: str):
         """
@@ -59,7 +48,7 @@ class NeuralVolumeBuilder:
             nv: neuralvolumes rgba with scale 0-1   -> shape: (nofPoints, 4)
         """
         mesh = pv.read(gt_path)
-        x, y, z = self.__get_meshgrid_uniform_positions()
+        x, z, y = self.__get_meshgrid_uniform_positions()
 
         # Create unstructured grid from the structured grid
         grid = pv.StructuredGrid(x * 100., y * 100., z * 100.)
@@ -75,9 +64,9 @@ class NeuralVolumeBuilder:
         alpha = np.zeros((mask.shape[0], 1))
         alpha[mask, 0] = 1.
 
-        r_value = np.mean(np.array([152., 109., 196.])) / 255.
-        g_value = np.mean(np.array([106., 73., 150.])) / 255.
-        b_value = np.mean(np.array([70., 49., 114.])) / 255.
+        r_value = np.mean(np.array([152., 109., 196.]))
+        g_value = np.mean(np.array([106., 73., 150.]))
+        b_value = np.mean(np.array([70., 49., 114.]))
 
         colors = np.zeros((mask.shape[0], 3))
         colors[mask, 0] = r_value
