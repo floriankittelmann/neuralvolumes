@@ -14,6 +14,6 @@ class GroundTruthLoss:
         pos_model, volume_pred = self.nv_builder.get_nv_from_model_output(self.decout)
         volume_pred = volume_pred / 255. * 2. - 1.
         volume_truth = self.volume_truth / 255. * 2. - 1.
-        loss_fn = torch.nn.MSELoss(reduction='sum')
+        loss_fn = torch.nn.MSELoss(reduction='mean')
         loss = loss_fn(volume_pred, volume_truth)
         return loss
