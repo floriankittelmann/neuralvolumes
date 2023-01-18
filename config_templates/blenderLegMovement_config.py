@@ -26,9 +26,9 @@ class DatasetConfig:
         self.encoder_mode_res = Blender2Dataset.MODE_128x84
         # use all: self.loss_cameras = ['028', '034' '004', '010', '016', '022']
         # use default: self.encoder_input_cameras = ['028', '004', '016']
-        self.ground_truth_resolution = 16
-        self.subsamplesize = 16
-        self.templatesize = 16
+        self.ground_truth_resolution = 48
+        self.subsamplesize = 48
+        self.templatesize = 48
 
     def get_train_dataset_config_func(
             self,
