@@ -63,11 +63,14 @@ class NeuralVolumePlotter:
 
     def plot_one_frame(self, decout: dict, input: dict):
         fig = plt.figure()
-        ax = fig.add_subplot(projection='3d')
-        ax.set_xlabel('x')
-        ax.set_ylabel('y')
-        ax.set_zlabel('z')
+        ax = fig.add_subplot(121, projection='3d')
         self.__plot_nv_output_model(decout, ax)
+        limit = [-1.0, 1.0]
+        ax.set_xlim(limit)
+        ax.set_ylim(limit)
+        ax.set_zlim(limit)
+
+        ax = fig.add_subplot(122, projection='3d')
         positions = input["gt_positions"]
         volume = input["gt_volume"]
         self.__plot_nv_ground_truth(positions, volume, ax)
