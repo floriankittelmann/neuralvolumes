@@ -1,6 +1,8 @@
 import numpy as np
+import torch
 from matplotlib import pyplot as plt
 
+from eval.NeuralVolumePlotter.GroundTruthLoss import GroundTruthLoss
 from eval.NeuralVolumePlotter.NeuralVolumeBuilder import NeuralVolumeBuilder
 from eval.NeuralVolumePlotter.NeuralVolumeFormatter import NeuralVolumeFormatter
 
@@ -51,9 +53,13 @@ class NeuralVolumePlotter:
             positions, volume = formatter.exclude_transparent_points(positions=positions, volume=volume)
         return positions, volume
 
-    def __plot_nv_ground_truth(self, positions: np.ndarray, volume: np.ndarray, ax):
-        #nv_builder = NeuralVolumeBuilder(self.resolution)
-        #positions, volume = nv_builder.get_nv_ground_truth("experiments/blenderLegMovement/data/groundtruth_train/frame0000.stl")
+    def __plot_nv_ground_truth(self, positions: np.ndarray, volume: np.ndarray, frame: int, ax):
+        nv_builder = NeuralVolumeBuilder(self.resolution)
+        frame_path = "experiments/blenderLegMovement/data/groundtruth_test/frame{:04d}.stl".format(frame)
+        positions, volume = nv_builder.get_nv_ground_truth(frame_path)
+        volume = volume.reshape((1, volume.shape[0], volume.shape[1]))
+        positions = positions.reshape((1, positions.shape[0], positions.shape[1]))
+
         volume[:, :, 0:3] = volume[:, :, 0:3] / 255.
         positions, volume = self.__prepare_pos_nv_np_arrays_for_plot(positions, volume)
         x = positions[:, 0]
@@ -71,11 +77,18 @@ class NeuralVolumePlotter:
         ax.set_zlim(limit)
 
         ax = fig.add_subplot(122, projection='3d')
-        positions = input["gt_positions"]
-        volume = input["gt_volume"]
-        self.__plot_nv_ground_truth(positions, volume, ax)
+        ground_positions = input["gt_positions"]
+        ground_volume = input["gt_volume"]
+        frame: torch.Tensor = input["frame"]
+        if frame.shape[0] != 1:
+            raise Exception("when plotting a NeuralVolume the batch size should be 1. Can just plot one NeuralVolume "
+                            "at once")
+        frame: int = frame.item()
+        self.__plot_nv_ground_truth(ground_positions, ground_volume, frame, ax)
         limit = [-1.0, 1.0]
         ax.set_xlim(limit)
         ax.set_ylim(limit)
         ax.set_zlim(limit)
         plt.show()
+
+

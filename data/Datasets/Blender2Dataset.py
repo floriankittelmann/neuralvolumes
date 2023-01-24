@@ -151,6 +151,7 @@ class Blender2Dataset(torch.utils.data.Dataset):
         frame, cam = self.framecamlist[idx]
         result = {}
         validinput = True
+        result['frame'] = frame
         if "fixedcamimage" in self.keyfilter:
 
             ninput = len(self.fixedcameras)
@@ -184,7 +185,8 @@ class Blender2Dataset(torch.utils.data.Dataset):
         if gt_path is not None:
             gt_path = str(gt_path)
             gt_path = os.path.join(gt_path, "frame{:04d}.stl".format(frame))
-            nv_builder = NeuralVolumeBuilder(self.ground_truth_resolution)
+            #nv_builder = NeuralVolumeBuilder(self.ground_truth_resolution)
+            nv_builder = NeuralVolumeBuilder(16)
             gt_pos, gt_volume = nv_builder.get_nv_ground_truth(gt_path)
             result["gt_positions"] = gt_pos.astype(np.float32)
             result['gt_volume'] = gt_volume.astype(np.float32)

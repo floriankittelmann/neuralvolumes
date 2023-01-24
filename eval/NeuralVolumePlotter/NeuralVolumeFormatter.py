@@ -2,7 +2,7 @@ import colorsys
 from typing import Callable
 import numpy as np
 
-THRESHOLD_GRAY_VALUES = 25.
+THRESHOLD_GRAY_VALUES = 40.
 
 def exclude_by_hsv(row: np.ndarray) -> np.ndarray:
     (r, g, b, a, _) = row
@@ -21,10 +21,15 @@ def exclude_by_alpha(row: np.ndarray) -> np.ndarray:
 
 class NeuralVolumeFormatter:
 
-    def __get_filtered_pos_volume(self, positions: np.ndarray, volume: np.ndarray, filter_func: Callable):
+    def __get_filtered_pos_volume(
+            self,
+            positions: np.ndarray,
+            volume: np.ndarray,
+            filter_func: Callable):
         column_to_add = np.full((volume.shape[0], 1), True)
         temp_data = np.concatenate((volume, column_to_add), axis=1)
         temp_data = np.apply_along_axis(filter_func, 1, temp_data)
+        print(np.count_nonzero(temp_data[:, 4]))
         mask = temp_data[:, 4].astype(bool)
         return positions[mask, :], volume[mask, :]
 

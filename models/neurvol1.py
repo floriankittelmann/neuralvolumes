@@ -61,7 +61,7 @@ class Autoencoder(nn.Module):
     def forward(self, iternum, losslist, camrot, campos, focal, princpt, pixelcoords, validinput,
                 fixedcamimage=None, encoding=None, keypoints=None, camindex=None,
                 image=None, imagevalid=None, viewtemplate=False,
-                outputlist=[], gt_positions=None, gt_volume=None):
+                outputlist=[], gt_positions=None, gt_volume=None, frame=None):
         result = {"losses": {}}
 
         # encode input or get encoding
@@ -105,7 +105,7 @@ class Autoencoder(nn.Module):
                 torch.log(0.1 + 1. - rayalpha.view(rayalpha.size(0), -1)) - -2.20727, dim=-1)
             result["losses"]["alphapr"] = alphaprior
 
-        if gt_volume is not None and gt_positions is not None and self.ground_truth_resolution is not None:
+        if False and gt_volume is not None and gt_positions is not None and self.ground_truth_resolution is not None:
             truth = GroundTruthLoss(decout, gt_positions, gt_volume, self.ground_truth_resolution)
             loss = truth.calculate_mse_loss()
             result['ground_truth_loss'] = loss

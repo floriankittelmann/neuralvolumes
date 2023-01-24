@@ -18,7 +18,7 @@ class TrainBlender2:
             batchsize: int,
             maxiter: int,
             lr: float,
-            should_train_with_ground_truth: bool
+            should_train_with_ground_truth: bool = True
     ):
         self.get_autoencoder_func = get_autoencoder_func
         self.get_dataset_func = get_dataset_func
